@@ -1,0 +1,17 @@
+# Risk Kaydı
+
+Olasılık (O) ve etki (E) 1 ile 5 arasında puanlanır; risk skoru O × E'dir. Skor 12 ve üzeriyse risk kırmızı, 6–11 arasındaysa sarı, 5 ve altındaysa yeşil sayılır. Kayıt her sprint sonunda gözden geçirilir. Tüm risklerin sahibi Arda Gonca'dır.
+
+| ID | Risk | O | E | Skor | Erken uyarı | Önlem | B planı |
+|---|---|---|---|---|---|---|---|
+| R-01 | Bilgisayarın RAM ve CPU kaynakları tüm servisleri aynı anda çalıştırmaya yetmez (32 GB RAM doğrulandı, olasılık düşürüldü) | 2 | 4 | 8 | Servisler ayaktayken host RAM kullanımı %90'ı aşar veya swap başlar | Mimari §7'deki kaynak bütçesi; servis başına RAM limiti; compose profilleriyle yalnızca gereken servisleri açmak | Spark tek konteynerde local modda çalıştırılır; bu da yetmezse sistem öğrenci kredisiyle GCP/AWS üzerindeki bir VM'e taşınır. Mimari değişmez |
+| R-05 | Otonom aksiyon zarar verir (yanlış alarmla restart veya veri silme) | 3 | 4 | 12 | EXP-05'te en az bir aksiyon tetiklenir | Allowlist, cooldown, saatlik üst sınır, yalnızca izinli dizinleri temizleyen playbook, kill switch, varsayılan dry-run | Aksiyonlar insan onaylı "öneri moduna" alınır; K8 sonucu olduğu gibi raporlanır |
+| R-08 | Zaman yetmez (sınav dönemleri, tek geliştirici) | 4 | 3 | 12 | Sprint hedefi iki sprint üst üste kaçırılır | Kapasite planı ve tampon sprintler | Önce Could, sonra Should öncelikli işler kesilir (UI-03, REM-07 …); Must işler korunur |
+| R-03 | Streaming gecikmesi K5 hedefini aşar | 3 | 3 | 9 | EXP-03'te p95 > 10 sn | Trigger süresi ve partition ayarı; modelin worker başına bir kez yüklenmesi | Skorlama, Spark dışında bir Python Kafka consumer'ına taşınır. Bu bir yöntem değişikliğidir: hız katmanının teknolojisi değişir, mimari aynı kalır. Yeni bir ADR yazılır |
+| R-04 | Spark ve PyTorch imajında sürüm uyumsuzluğu çıkar | 3 | 3 | 9 | INF-04 tahmin edilen 6 saati aşar | Sürüm sabitleme, CPU-only PyTorch | R-03'ün B planı uygulanır |
+| R-07 | Demo sistemdeki arızalar gerçek arızaları temsil etmez (geçerlilik riski) | 3 | 3 | 9 | – | Ani ve kademeli olmak üzere 4 senaryo; senaryoların literatürdeki arıza sınıflarına dayandırılması | Bu durum sınırlılık olarak raporlanır; ana bilimsel kanıt, gerçek etiketli HDFS_v1 sonuçları olarak kalır |
+| R-11 | Kapsam kayar | 3 | 3 | 9 | Backlog'a kilometre taşı kapsamı dışında iş eklenir | Tüzükteki "kapsam dışı" listesi; kapsam değişiklikleri için danışman onayı | Yeni iş erteleme listesine alınır |
+| R-02 | DeepLog K3 hedefine ulaşamaz | 2 | 4 | 8 | M2 ortasında val setinde F1 < 0,85 | Makaleye sadık uygulama; parsing doğruluğunun ayrıca kontrolü (ML-01) | LogAnomaly veya Autoencoder denenir. Hedef değişecekse KPI değişiklik süreci işletilir |
+| R-06 | Remediator'ın Docker soketine erişimi güvenlik açığı yaratır | 2 | 4 | 8 | – | Yalnızca laboratuvar ortamı, portların localhost'a bağlanması, allowlist | Remediator, Docker soketi yerine SSH üzerinden ayrı bir VM'deki hedefi yönetir |
+| R-09 | Windows ve WSL2'ye özgü sorunlar (satır sonları, dosya izinleri, ağ) | 3 | 2 | 6 | – | `.gitattributes` ile LF satır sonu; tüm araçların konteyner içinde çalışması | Linux VM veya bulut |
+| R-10 | Veri setine erişilemez | 1 | 4 | 4 | İndirme başarısız olur | Zenodo'dan indirme, yerel yedek ve SHA-256 doğrulaması | Loghub'daki BGL veri setine geçilir |

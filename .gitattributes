@@ -1,0 +1,5 @@
+# Konteynerlere giren betikler Windows'ta CRLF ile bozulmasın diye tüm metin dosyaları LF.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary

@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Sırlar: yalnızca .env.example depoya girer
+.env
+!.env.example
+
+# Veri, modeller ve streaming çıktıları (HDFS'te veya data/ altında tutulur)
+data/
+*.pt
+*.pth
+*.parquet
+checkpoints/
+spark-warehouse/
+metastore_db/
+
+# Deney çıktıları: config'ler ve özetler depoya girer, ham çıktılar girmez
+experiments/**/raw/
+
+# Editör ve işletim sistemi
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
