@@ -1,0 +1,14 @@
+commit: e6672ae
+hızlar (log/sn): 1000 2500 5000 10000
+tekrar: 3
+koşu süresi (sn): 660 (ilk 60 sn ısınma)
+ingest tetikleyici: 30 sn, uygulama başına 1 çekirdek / 1 GB executor
+başlangıç (UTC): 2026-11-18T13:05:14Z
+--- devam: tekrar 3..3 ---
+commit: f926ea7
+hızlar (log/sn): 1000 2500 5000 10000
+tekrar: 3..3
+koşu süresi (sn): 660 (ilk 60 sn ısınma)
+ingest tetikleyici: 30 sn, uygulama başına 1 çekirdek / 1 GB executor
+başlangıç (UTC): 2026-11-18T15:33:19Z
+bitiş (UTC): 2026-11-18T16:22:00Z
