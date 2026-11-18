@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Büyük veri tabanlı AIOps platformu: log anomali tespiti ve otonom iyileştirme"
 license = "Apache-2.0"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "confluent-kafka>=2.16.2",
+]
 
 [dependency-groups]
 dev = [
