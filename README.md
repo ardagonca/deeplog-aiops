@@ -2,7 +2,7 @@
 
 Dağıtık sistemlerden akan log ve metrikleri gerçek zamanlı analiz eden, arızaları erken tespit eden ve tanımlı senaryolarda kendini otonom olarak iyileştiren açık kaynak bir AIOps prototipi. TÜBİTAK 2209-A kapsamında Bartın Üniversitesi'nde geliştirilmektedir.
 
-> **Durum:** M2 – Model. Veri hattı kayıpsız çalışıyor (10.000 log/sn'de kayıp 0). HDFS_v1'de ilk model sonuçları alındı: olay sayımı yeniliği F1 0,990; DeepLog + oturum sonu F1 0,717 (EXP-02, ADR-0009).
+> **Durum:** M2 – Model. Veri hattı kayıpsız çalışıyor (10.000 log/sn'de kayıp 0). HDFS_v1'de model sonuçları: olay sayımı yeniliği F1 0,990, DeepLog + oturum sonu F1 0,717 (EXP-02, ADR-0009); model `hdfs-v1` HDFS'te. Sırada M3: gerçek zamanlı tespit.
 
 ## Belgeler
 

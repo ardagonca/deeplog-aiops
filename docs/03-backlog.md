@@ -55,7 +55,7 @@ Bu dosya projenin backlog'udur (18.11.2026'da resmi takvime göre yeniden planla
 | ML-04 | DeepLog (LSTM, h=10, g=9, makaleye uygun) ve `config.yaml` ile eğitim | Eğitim tek komutla çalışıyor; sabit seed'le kayıp eğrisi tekrarlanabilir | 12 | Must | ML-02 | ✅ S1 |
 | ML-05 | Ortak skor modülü ve değerlendirme: P/R/F1, karışıklık matrisi, McNemar | Skor fonksiyonunun birim testleri var; eşik yalnızca val setinde seçiliyor | 6 | Must | ML-03, ML-04 | ✅ S1 |
 | ML-06 | Hiperparametre taraması (h, g, gizli boyut, katman sayısı); yalnızca val seti | Sonuç tablosu ve seçilen konfigürasyon kayıtlı | 8 | Should | ML-05 | S2 |
-| ML-07 | Model paketi: `models/deeplog/<iz>-vN/` ve `load_model(version)` | Paketten yüklenen model aynı test skorunu veriyor | 4 | Must | ML-05 | S2 |
+| ML-07 | Model paketi: `models/deeplog/<iz>-vN/` ve `load_model(version)` | Paketten yüklenen model aynı test skorunu veriyor | 4 | Must | ML-05 | ✅ S2 |
 | ML-08 | EXP-02 raporu; sonuçların TÜBİTAK formunun 5. bölümüne tablo olarak eklenmesi | K3 ve K4 sonuçları; test seti yalnızca bir kez kullanıldı | 6 | Must | ML-07 | ✅ S2 |
 | ML-09 | Tek komutla veriden modele ve rapora uzanan pipeline betiği | Temiz HDFS üzerinde EXP-02 sonuçlarını yeniden üretiyor | 6 | Should | ML-08 | S2 |
 

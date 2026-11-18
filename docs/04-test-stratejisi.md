@@ -41,6 +41,8 @@
 
 ## 4. Deney protokolleri
 
+**Yeniden üretilebilirlik notu:** PyTorch'ta aynı tohum, farklı iş parçacığı sayısında farklı model verir, çünkü kayan nokta toplamlarının sırası değişir. Bu yüzden model deneyleri iş parçacığı sayısını ayarlarına yazar; aynı sonucu almak için aynı sayı kullanılmalıdır (EXP-02: 3).
+
 Her deney koşusu `experiments/EXP-XX/<tarih>/` klasörüne şunları yazar: kullanılan config, ham sonuçlar, özet (`ozet.md`) ve commit hash'i. Raporlardaki sayılar elle kopyalanmaz, betik tarafından üretilir.
 
 | ID | Ne ölçer | KPI | Kurulum | Tekrar | Raporlanan |
