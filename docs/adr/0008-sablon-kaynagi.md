@@ -1,6 +1,6 @@
 # ADR-0008: Şablon kaynağı — HDFS_v1'de resmi Loghub şablonları, demo sistemde Drain
 
-- Durum: Önerildi
+- Durum: Kabul (2026-11-18)
 - Tarih: 2026-11-18
 - İlgili: [ADR-0003](0003-deeplog-ana-model.md) (Drain + DeepLog), [ADR-0006](0006-veri-ve-degerlendirme.md) (iki iz)
 

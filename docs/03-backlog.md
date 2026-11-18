@@ -49,7 +49,7 @@ Bu dosya projenin backlog'udur (18.11.2026'da resmi takvime göre yeniden planla
 
 | ID | İş | Kabul kriteri | Sa | Öncelik | Bağımlılık | Sprint |
 |---|---|---|---|---|---|---|
-| ML-01 | Şablonlama job'u: Drain3 (`mapInPandas`), `curated/events` ve `templates.json` üretimi | Loghub'ın etiketli 2k örneğinde parsing doğruluğu raporlanıyor; yalnızca `source = hdfs-replay` kayıtları okunuyor | 10 | Must | ING-10 | S1 |
+| ML-01 | Şablonlama: HDFS_v1 için resmi şablon eşleştirici, demo sistem için Drain3 ([ADR-0008](adr/0008-sablon-kaynagi.md)); Spark işi (`mapInPandas`) `curated/events` üretir | Loghub'ın etiketli 2k örneğinde parsing doğruluğu raporlanıyor; yalnızca `source = hdfs-replay` kayıtları okunuyor | 10 | Must | ING-10 | S1 |
 | ML-02 | Oturum oluşturma (`block_id`), etiket birleştirme, kronolojik train/val/test bölmesi | Bölme sabit seed ile tekrarlanabilir; eğitim setinde yalnızca normal oturumlar var | 6 | Must | ML-01 | S1 |
 | ML-03 | Isolation Forest baseline (oturum başına olay sayım vektörü) | Val ve test metrikleri `metrics.json`'a yazılıyor | 4 | Must | ML-02 | S1 |
 | ML-04 | DeepLog (LSTM, h=10, g=9, makaleye uygun) ve `config.yaml` ile eğitim | Eğitim tek komutla çalışıyor; sabit seed'le kayıp eğrisi tekrarlanabilir | 12 | Must | ML-02 | S1 |
