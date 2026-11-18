@@ -74,28 +74,36 @@ class DeepLog(nn.Module):
 
 
 def train(model, X, y, weights, epochs, batch_size=2048, lr=1e-3, seed=0) -> list[float]:
-    """Ağırlıklı CrossEntropy (sum(w*ce)/sum(w)) ile Adam; epoch kayıplarını döner.
+    """Adam ile eğitir; epoch başına ortalama kaybı döner.
 
-    seed karıştırma sırasını belirler. İlk ağırlıklar için modeli kurmadan önce
-    torch.manual_seed çağrılmalıdır."""
+    Her mini-batch, tekilleştirilmiş pencerelerden ağırlıklarıyla orantılı olasılıkla (yerine
+    koyarak) örneklenir. Bu, tüm (tekrarlı) pencerelerle yapılan SGD'ye eşdeğerdir. Ağırlıklı
+    kayıpla (sum(w*ce)/sum(w)) karşılaştırıldığında, ağırlıklar çok çarpık olduğunda
+    (HDFS'te tek pencere yüz binlerce kez tekrarlanır) gradyan gürültüsü daha azdır; EXP-02
+    tanısında doğrulama F1'i arttı ve tohumlar arası fark azaldı. Bir epoch,
+    ceil(len(y) / batch_size) adımdır (hesap bütçesi eski yöntemle aynı).
+
+    seed örneklemeyi belirler. İlk ağırlıklar için modeli kurmadan önce torch.manual_seed
+    çağrılmalıdır."""
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
-    X, y, w = torch.as_tensor(X), torch.as_tensor(y), torch.as_tensor(weights)
+    X, y = torch.as_tensor(X), torch.as_tensor(y)
+    p = np.asarray(weights, dtype=np.float64)
+    p = p / p.sum()
+    steps = max(1, -(-len(y) // batch_size))
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     model.train()
     losses = []
     for _ in range(epochs):
-        total, weight_sum = 0.0, 0.0
-        for idx in np.array_split(rng.permutation(len(y)), max(1, -(-len(y) // batch_size))):
-            idx = torch.as_tensor(idx)
-            ce = F.cross_entropy(model(X[idx]), y[idx], reduction="none")
-            loss = (w[idx] * ce).sum() / w[idx].sum()
+        total = 0.0
+        for _ in range(steps):
+            idx = torch.as_tensor(rng.choice(len(y), size=batch_size, p=p))
+            loss = F.cross_entropy(model(X[idx]), y[idx])
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            total += float((w[idx] * ce.detach()).sum())
-            weight_sum += float(w[idx].sum())
-        losses.append(total / weight_sum)
+            total += loss.item()
+        losses.append(total / steps)
     return losses
 
 
