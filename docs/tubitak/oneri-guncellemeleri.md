@@ -166,34 +166,58 @@ Düzeltilen ve eklenen kaynaklar:
 - **Landauer vd. (2023):** Kaynakçada iki kez geçiyordu; tekrar kaldırıldı.
 - **Blessing vd. (2025):** Yayın yeri belirtilmediği için çıkarıldı.
 - **Pahl ve Jamshidi:** Künyesi doğrulanamadığı için çıkarıldı.
-- **Eklenenler:** Zhu vd. (2023), Armbrust vd. (2018), Lerner (2014).
+- **Eklenenler:** Zhu vd. (2023), Zhu vd. (2019), Armbrust vd. (2018), Lerner (2014). Tüm künyeler web üzerinden doğrulandı; ayrıntılar en alttaki "Doğrulama notları" bölümünde.
 
-Armbrust, M., Das, T., Torres, J., Yavuz, B., Zhu, S., Xin, R., Ghodsi, A., Stoica, I., & Zaharia, M. (2018). Structured streaming: A declarative API for real-time applications in Apache Spark. *Proceedings of the 2018 International Conference on Management of Data (SIGMOD)*, 601–613.
+Armbrust, M., Das, T., Torres, J., Yavuz, B., Zhu, S., Xin, R., Ghodsi, A., Stoica, I., & Zaharia, M. (2018). Structured streaming: A declarative API for real-time applications in Apache Spark. In *Proceedings of the 2018 International Conference on Management of Data (SIGMOD '18)* (pp. 601–613). ACM. https://doi.org/10.1145/3183713.3190664
 
-Chandola, V., Banerjee, A., & Kumar, V. (2009). Anomaly detection: A survey. *ACM Computing Surveys*, 41(3), 1–58.
+Chandola, V., Banerjee, A., & Kumar, V. (2009). Anomaly detection: A survey. *ACM Computing Surveys, 41*(3), Article 15. https://doi.org/10.1145/1541880.1541882
 
-Du, M., Li, F., Zheng, G., & Srikumar, V. (2017). DeepLog: Anomaly detection and diagnosis from system logs through deep learning. *Proceedings of the 2017 ACM SIGSAC Conference on Computer and Communications Security*, 1285–1298.
+Du, M., Li, F., Zheng, G., & Srikumar, V. (2017). DeepLog: Anomaly detection and diagnosis from system logs through deep learning. In *Proceedings of the 2017 ACM SIGSAC Conference on Computer and Communications Security (CCS '17)* (pp. 1285–1298). ACM. https://doi.org/10.1145/3133956.3134015
 
-Ghosh, D., Sharman, R., Rao, H. R., & Upadhyaya, S. (2007). Self-healing systems—survey and synthesis. *Decision Support Systems*, 42(4), 2164–2185.
+Ghosh, D., Sharman, R., Rao, H. R., & Upadhyaya, S. (2007). Self-healing systems—Survey and synthesis. *Decision Support Systems, 42*(4), 2164–2185. https://doi.org/10.1016/j.dss.2006.06.011
 
-He, P., Zhu, J., Zheng, Z., & Lyu, M. R. (2017). Drain: An online log parsing approach with fixed depth tree. *2017 IEEE International Conference on Web Services (ICWS)*, 33–40.
+He, P., Zhu, J., Zheng, Z., & Lyu, M. R. (2017). Drain: An online log parsing approach with fixed depth tree. In *2017 IEEE International Conference on Web Services (ICWS)* (pp. 33–40). IEEE. https://doi.org/10.1109/ICWS.2017.13
 
-He, S., He, P., Chen, Z., Yang, T., Su, Y., & Lyu, M. R. (2021). A survey on automated log analysis for reliability engineering. *ACM Computing Surveys*, 54(6), 1–37.
+He, S., He, P., Chen, Z., Yang, T., Su, Y., & Lyu, M. R. (2021). A survey on automated log analysis for reliability engineering. *ACM Computing Surveys, 54*(6), Article 130. https://doi.org/10.1145/3460345
 
-Kreps, J., Narkhede, N., & Rao, J. (2011). Kafka: A distributed messaging system for log processing. *Proceedings of the NetDB*, 1–7.
+Kreps, J., Narkhede, N., & Rao, J. (2011). Kafka: A distributed messaging system for log processing. In *Proceedings of the 6th International Workshop on Networking Meets Databases (NetDB '11)*. Athens, Greece.
 
-Landauer, M., Onder, S., Skopik, F., & Wurzenberger, M. (2023). Deep learning for anomaly detection in log data: A survey. *Machine Learning with Applications*, 12, 100470.
+Landauer, M., Onder, S., Skopik, F., & Wurzenberger, M. (2023). Deep learning for anomaly detection in log data: A survey. *Machine Learning with Applications, 12*, Article 100470. https://doi.org/10.1016/j.mlwa.2023.100470
 
-Lerner, A. (2014). *The cost of downtime*. Gartner Blog Network.
+Lerner, A. (2014, July 16). *The cost of downtime*. Gartner Blog Network. https://blogs.gartner.com/andrew-lerner/2014/07/16/the-cost-of-downtime/
 
-Liu, F. T., Ting, K. M., & Zhou, Z. H. (2008). Isolation forest. *2008 Eighth IEEE International Conference on Data Mining*, 413–422.
+Liu, F. T., Ting, K. M., & Zhou, Z.-H. (2008). Isolation forest. In *2008 Eighth IEEE International Conference on Data Mining (ICDM)* (pp. 413–422). IEEE. https://doi.org/10.1109/ICDM.2008.17
 
 Marz, N., & Warren, J. (2015). *Big Data: Principles and best practices of scalable realtime data systems*. Manning Publications.
 
-Yazdanparast, Z. (2024). A survey on self-healing software system. *arXiv preprint* arXiv:2403.00455.
+Yazdanparast, Z. (2024). *A survey on self-healing software system* (arXiv:2403.00455). arXiv. https://doi.org/10.48550/arXiv.2403.00455
 
-Zaharia, M., Chowdhury, M., Franklin, M. J., Shenker, S., & Stoica, I. (2010). Spark: Cluster computing with working sets. *HotCloud*, 10, 95.
+Zaharia, M., Chowdhury, M., Franklin, M. J., Shenker, S., & Stoica, I. (2010). Spark: Cluster computing with working sets. In *Proceedings of the 2nd USENIX Workshop on Hot Topics in Cloud Computing (HotCloud '10)*. USENIX Association.
 
-Zhu, J., He, S., He, P., Liu, J., & Lyu, M. R. (2023). Loghub: A large collection of system log datasets for AI-driven log analytics. *2023 IEEE 34th International Symposium on Software Reliability Engineering (ISSRE)*, 355–366.
+Zhu, J., He, S., He, P., Liu, J., & Lyu, M. R. (2023). Loghub: A large collection of system log datasets for AI-driven log analytics. In *2023 IEEE 34th International Symposium on Software Reliability Engineering (ISSRE)* (pp. 355–366). IEEE. https://doi.org/10.1109/ISSRE59848.2023.00071
+
+Zhu, J., He, S., Liu, J., He, P., Xie, Q., Zheng, Z., & Lyu, M. R. (2019). Tools and benchmarks for automated log parsing. In *2019 IEEE/ACM 41st International Conference on Software Engineering: Software Engineering in Practice (ICSE-SEIP)* (pp. 121–130). IEEE.
 
 > Bifet vd. (2015, StreamDM) metinde kullanılmıyorsa kaynakçadan çıkarılabilir. Kaynakçadaki her kaynağa metinde en az bir atıf olmalıdır.
+
+## Doğrulama notları
+
+Künyeler 2026-11-18'de web'den doğrulandı. Metinde atıf yapılmayan kaynaklar: Chandola vd. (2009), Liu vd. (2008), Yazdanparast (2024), Zaharia vd. (2010) ve eklenen Zhu vd. (2019). Bunlara metinde atıf eklenmeli ya da kaynakçadan çıkarılmalıdır. Zhu vd. (2019), ön çalışmadaki şablonlama doğruluğu ölçütünün (Grouping Accuracy) kaynağıdır; Ön Çalışma bölümünde bu ölçüt kullanılırsa atıf orada yapılmalıdır.
+
+| Kaynak | Durum | Bağlantı |
+|---|---|---|
+| Armbrust vd. (2018) | Doğrulandı; sayfa (601–613) doğru, DOI eklendi | https://dblp1.uni-trier.de/rec/conf/sigmod/ArmbrustDTYZX0S18.html |
+| Chandola vd. (2009) | Düzeltildi: "1–58" yerine Article 15 (58 sayfa), DOI eklendi | https://www.profsandhu.com/cs5323_s17/a15-chandola.pdf |
+| Du vd. (2017) | Doğrulandı; sayfa (1285–1298) doğru, DOI eklendi | https://dblp.org/rec/conf/ccs/Du0ZS17 |
+| Ghosh vd. (2007) | Doğrulandı; DOI eklendi | https://dblp.org/rec/journals/dss/GhoshSRU07 |
+| He vd. (2017) | Doğrulandı; DOI eklendi | https://researchr.org/publication/HeZZL17 |
+| He vd. (2021) | Düzeltildi: "1–37" yerine Article 130, DOI eklendi | https://arxiv.org/abs/2009.07237v2 |
+| Kreps vd. (2011) | Düzeltildi: yayın yeri tam adıyla yazıldı (NetDB '11, Atina). Sayfa aralığı (1–7) resmi bir kaynakta doğrulanamadığı için çıkarıldı | https://people.csail.mit.edu/matei/courses/2015/6.S897/readings/kafka.pdf |
+| Landauer vd. (2023) | Doğrulandı; Article 100470, DOI eklendi | https://doaj.org/article/50b62d84af08411ebc50e4fa37f10fb6 |
+| Lerner (2014) | Düzeltildi: tarih ve bağlantı eklendi. 5.600 $/dk rakamı ikincil kaynaklarda doğrulandı; blog yazısının kendisine erişilemedi | https://blogs.gartner.com/andrew-lerner/2014/07/16/the-cost-of-downtime/ |
+| Liu vd. (2008) | Doğrulandı; sayfa (413–422) doğru, DOI eklendi | https://researchr.org/publication/LiuTZ08/bibtex |
+| Marz ve Warren (2015) | Doğrulandı (Manning, ISBN 9781617290343) | https://www.manning.com/books/big-data |
+| Yazdanparast (2024) | Doğrulandı (arXiv:2403.00455, yalnızca v1) | https://arxiv.org/abs/2403.00455v1 |
+| Zaharia vd. (2010) | Düzeltildi: "HotCloud, 10, 95" gerçek bir cilt/sayfa değil; yayın yeri HotCloud '10 olarak yazıldı | https://usenix.org/conference/hotcloud-10/spark-cluster-computing-working-sets |
+| Zhu vd. (2023) | Doğrulandı; sayfa (355–366) doğru, DOI eklendi | https://arxiv.org/abs/2008.06448 |
+| Zhu vd. (2019) | Eklendi; ICSE-SEIP 2019, 121–130 | https://researchr.org/publication/ZhuHLHXZL19 |
