@@ -67,3 +67,22 @@ def test_replay_respects_limit_skips_blank_lines_and_unlimited_rate():
     )
     assert count == 3 == len(sent)
     assert clock.slept == 0
+
+
+def test_replay_uses_given_source_for_value_and_fallback_key():
+    sent = []
+    clock = FakeClock()
+    no_block = "081109 203518 143 INFO dfs.FSNamesystem: blok yok\n"
+    replay(
+        [LINE, no_block],
+        lambda v, k: sent.append((LogEvent.from_json(v).source, k)),
+        {},
+        rate=0,
+        clock=clock,
+        sleep=clock.sleep,
+        source="exp01-r5000-1",
+    )
+    assert sent == [
+        ("exp01-r5000-1", b"blk_-1608999687919862906"),
+        ("exp01-r5000-1", b"exp01-r5000-1"),  # blok yoksa anahtar kaynak adıdır
+    ]

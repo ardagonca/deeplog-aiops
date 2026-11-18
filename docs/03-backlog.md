@@ -43,12 +43,13 @@ Bu dosya projenin başlangıç backlog'udur. İş takibi GitHub Issues ve Projec
 | ING-07 | Performans ayarı: partition sayısı, trigger süresi, Parquet dosya boyutu | Ayar kararları gerekçeleriyle birlikte kayıtlı | 10 | Should | ING-06 | S5 |
 | ING-08 | EXP-01: alım hızı ve kayıp deneyi ve raporu | K1 ve K2 sonuçları `experiments/EXP-01/` altında | 8 | Must | ING-06 | S5 |
 | ING-09 | Runbook: veri hattı (job'u yeniden başlatma, checkpoint sıfırlama) | – | 2 | Should | ING-04 | S5 |
+| ING-10 | Kanonik HDFS_v1 oynatması: `logs.raw`, ham bölge ve checkpoint'ler sıfırlanır (runbook), HDFS_v1'in tamamı **bir kez** `--source hdfs-replay` ile oynatılır | Ham bölgede `source = hdfs-replay` olan 11.175.629 kayıt var; tekrar yok (`verify_ingest`). Test ve deney verileri ayrı kaynak adlarıyla tutulur | 3 | Must | ING-08 | S6 |
 
 ## EP-3 ML — Model (M2)
 
 | ID | İş | Kabul kriteri | Sa | Öncelik | Bağımlılık | Sprint |
 |---|---|---|---|---|---|---|
-| ML-01 | Şablonlama job'u: Drain3 (`mapInPandas`), `curated/events` ve `templates.json` üretimi | Loghub'ın etiketli 2k örneğinde parsing doğruluğu raporlanıyor | 10 | Must | ING-04 | S6 |
+| ML-01 | Şablonlama job'u: Drain3 (`mapInPandas`), `curated/events` ve `templates.json` üretimi | Loghub'ın etiketli 2k örneğinde parsing doğruluğu raporlanıyor; yalnızca `source = hdfs-replay` kayıtları okunuyor | 10 | Must | ING-10 | S6 |
 | ML-02 | Oturum oluşturma (`block_id`), etiket birleştirme, kronolojik train/val/test bölmesi | Bölme sabit seed ile tekrarlanabilir; eğitim setinde yalnızca normal oturumlar var | 6 | Must | ML-01 | S6 |
 | ML-03 | Isolation Forest baseline (oturum başına olay sayım vektörü) | Val ve test metrikleri `metrics.json`'a yazılıyor | 4 | Must | ML-02 | S6 |
 | ML-04 | DeepLog (LSTM, h=10, g=9, makaleye uygun) ve `config.yaml` ile eğitim | Eğitim tek komutla çalışıyor; sabit seed'le kayıp eğrisi tekrarlanabilir | 12 | Must | ML-02 | S6 |

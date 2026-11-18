@@ -13,6 +13,7 @@ Bütün komutlar `infra/` dizininde çalıştırılır. Git Bash kullanılıyors
 | Ingest kabul testi | `bash ingest_test.sh` (yaklaşık 3 dakika; 150.000 mesaj, yazarken ingest'i çökertir, kayıp/tekrar denetler) |
 | Metrik akışını izle | `docker compose logs -f metrics-agent` ve `docker compose exec kafka /opt/kafka/bin/kafka-get-offsets.sh --bootstrap-server kafka:29092 --topic metrics.raw` |
 | Ingest kayıp/tekrar denetimi | `docker compose --profile jobs run --rm spark-job /opt/deeplog/jobs/verify_ingest.py` |
+| EXP-01 deneyi (K1, K2) | Depo kökünde `bash experiments/EXP-01/run.sh` (yaklaşık 2,5–3 saat; 12 koşu). Kısa deneme için: `bash experiments/EXP-01/run.sh "2000" 1 150`. Sonuç `experiments/EXP-01/<tarih>/ozet.md` dosyasına yazılır |
 | Arıza testleri | `bash failure_test.sh` (yaklaşık 8 dakika; servisleri bilerek çökertir, çalışan işler varken çalıştırma) |
 | Bir servisin loglarını izle | `docker compose logs -f <servis>` |
 

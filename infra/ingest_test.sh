@@ -16,7 +16,7 @@ BEFORE=$(restarts)
 START=$SECONDS
 
 echo "1) $N mesaj logs.raw'a gönderiliyor (arka planda)"
-(cd .. && uv run python -m ingestion.replayer --rate 5000 --limit "$N" >/dev/null) &
+(cd .. && uv run python -m ingestion.replayer --rate 5000 --limit "$N" --source ingest-test >/dev/null) &
 REPLAYER=$!
 
 echo "2) Sözleşmeye uymayan 3 mesaj gönderiliyor"

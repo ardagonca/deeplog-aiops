@@ -22,6 +22,7 @@
 | Precision, Recall, F1 | Değerlendirme birimi oturumdur (HDFS_v1'de `block_id`). Precision = TP / (TP + FP), Recall = TP / (TP + FN), F1 bu ikisinin harmonik ortalamasıdır |
 | FPR | FP / (FP + TN) |
 | Alım hızı | HDFS'e yazılan kayıt sayısının süreye bölümü. Ölçüm 10 dakikalık kararlı bölümde yapılır; ilk 1 dakika ısınma olarak hariç tutulur |
+| Ingest yetişiyor mu | Gecikme = `ingest_time` − `event_time`. Ingest gelen hıza yetişemezse gecikme dakikadan dakikaya büyür. Bu yüzden kararlı bölümün ilk ve son dakikasındaki p95 gecikme karşılaştırılır: fark 30 sn'yi aşmıyorsa ingest yetişiyor sayılır. K1, hedef hızdaki her koşunun hem yetişmesini hem de kayıpsız olmasını gerektirir |
 | Veri kaybı | 1 − (HDFS'teki benzersiz `id` sayısı / üretilen `id` sayısı). Tekrar oranı ayrıca raporlanır |
 | Tespit gecikmesi | `alert_time` − `trigger_event_time` |
 | İyileştirme süresi (TTR) | `actions.finished_at` − `alerts.alert_time`; yalnızca `status = success` olan aksiyonlar |

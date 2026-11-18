@@ -123,6 +123,8 @@ Tüm mesajlar UTF-8 JSON'dur ve bir `schema_version` alanı taşır. Şemalar IN
 
 `label` alanı yalnızca replayer tarafından doldurulur ve yalnızca deney değerlendirmesinde kullanılır. **Tespit job'u bu alanı okumaz.** Kural bir birim testiyle güvence altındadır (RT-05).
 
+`source` alanı verinin kökenini ayırır. `hdfs-replay` değeri, HDFS_v1'in ML için **bir kez** yapılan kanonik oynatmasına aittir (ING-10); ML işleri yalnızca bu kaynağı okur. Testler ve deneyler kendi kaynak adlarını kullanır (`ingest-test`, `exp01-r<hız>-<tekrar>-<zaman>`). Aynı HDFS_v1 satırları bu koşularda tekrar tekrar oynatıldığından, ayrım yapılmazsa aynı blok farklı koşulardaki kopyalarla tek oturumda birleşir ve eğitim verisi bozulur.
+
 **`metrics.raw`**
 
 ```json

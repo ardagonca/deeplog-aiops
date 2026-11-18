@@ -16,6 +16,8 @@ Dağıtık sistemlerden akan log ve metrikleri gerçek zamanlı analiz eden, ar�
 | [Risk Kaydı](docs/05-risk-kaydi.md) | Riskler, olasılık/etki, erken uyarılar, B planları |
 | [Çalışma Kuralları](docs/06-calisma-kurallari.md) | Git akışı, kod standartları, DoR/DoD, ritüeller |
 | [Mimari Karar Kayıtları](docs/adr/README.md) | Teknoloji ve yöntem seçimlerinin gerekçeleri |
+| [TÜBİTAK Formu Güncellemeleri](docs/tubitak/oneri-guncellemeleri.md) | Başvuru formuna aktarılacak güncel metinler (GOV-05) |
+| [Altyapı Runbook'u](docs/runbooks/altyapi.md) | Başlatma, test, deney, sıfırlama ve sorun giderme komutları |
 
 ## Hızlı başlangıç
 
