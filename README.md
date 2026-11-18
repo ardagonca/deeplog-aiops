@@ -25,6 +25,7 @@ Gereksinimler: Docker Desktop (WSL2 için en az 12 GB bellek) ve [uv](https://do
 uv sync                          # geliştirme araçları (Python 3.10)
 uv run pre-commit install        # commit öncesi ruff ve diğer kontroller
 uv run pytest                    # birim testleri
+uv run python -m ingestion.download_dataset   # HDFS_v1 veri seti (187 MB indirme, 1,8 GB açık)
 
 cd infra
 docker compose up -d --wait      # Kafka + HDFS + Spark; ilk açılışta Spark imajı build edilir (~5 dk)
@@ -32,3 +33,7 @@ bash smoke_test.sh               # uçtan uca doğrulama: Kafka -> Spark -> HDFS
 ```
 
 Arayüz adresleri, Spark işi çalıştırma ve sıfırlama adımları için bkz. [altyapı runbook'u](docs/runbooks/altyapi.md).
+
+## Veri seti
+
+Deneylerde [Loghub](https://github.com/logpai/loghub) HDFS_v1 veri seti kullanılır (Zhu vd., *Loghub: A Large Collection of System Log Datasets for AI-driven Log Analytics*, ISSRE 2023; [doi:10.5281/zenodo.8196385](https://doi.org/10.5281/zenodo.8196385)). Veri seti CC BY 4.0 lisanslıdır ve depoya dahil edilmez; `ingestion.download_dataset` betiği indirir ve SHA-256 ile doğrular.

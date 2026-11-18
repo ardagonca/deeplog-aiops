@@ -28,7 +28,7 @@
 
 ## 3. Veri setleri ve bölme ([ADR-0006](adr/0006-veri-ve-degerlendirme.md))
 
-**İz A, HDFS_v1 (Loghub):** Yaklaşık 11,2 milyon log satırı ve 575 bin oturum içerir; oturumların yaklaşık %2,9'u anormaldir. Etiketler oturum bazlıdır ve `anomaly_label.csv` dosyasında bulunur.
+**İz A, HDFS_v1 (Loghub):** 11.175.629 log satırı ve 575.061 oturum içerir; oturumların 16.838'i (%2,93) anormaldir (ING-01 ile indirilen dosyada sayıldı). Etiketler oturum bazlıdır ve `anomaly_label.csv` dosyasında bulunur.
 
 - Oturumlar başlangıç zamanına göre sıralanıp kronolojik olarak bölünür: %60 eğitim (yalnızca normal oturumlar), %10 doğrulama (val), %30 test.
 - Eşik ve hiperparametreler yalnızca val setinde seçilir.
