@@ -16,9 +16,9 @@ ADR-0003 log şablonlamasını Drain ile yapmayı öngörüyordu. ML-01 ölçüm
 
 Resmi şablonlarla deterministik eşleştiricinin (`ml/official_templates.py`) tam verideki ölçümü ([official_templates.md](../../experiments/ML-01/official_templates.md)):
 
-- Kapsama: _bkz. rapor_
-- Birden çok şablona uyan satır: _bkz. rapor_ (en özgül şablon seçilir)
-- Loghub `Event_traces.csv` ile blok başına olay dizisi uyumu (2.000 rastgele blok): _bkz. rapor_
+- Kapsama: 11.175.629 satırın **%100**'ü resmi şablonlardan birine uyuyor.
+- Birden çok şablona uyan satır: **0**. Yine de çakışma ihtimaline karşı en özgül şablon seçilir.
+- Loghub `Event_traces.csv` ile blok başına olay dizisi uyumu: rastgele seçilen 2.000 blokta (seed 42) **%100**. Eşleştiricimiz, literatürde kullanılan blok dizilerini birebir yeniden üretiyor.
 
 ## Önerilen karar
 
