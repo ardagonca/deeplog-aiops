@@ -45,6 +45,11 @@ Bulgular:
   - eğitim kararlılığı.
 
   Ağırlığa orantılı örneklemeli eğitim oynaklığı azalttı ama gidermedi: g doğrulama setinde seçildiği ve iki setin dağılımı farklı olduğu için test F1'i tohumdan tohuma 0,61–0,77 arasında değişiyor.
+- **Genelleme denetimi** ([genelleme-hdfs-v1.md](../../experiments/EXP-02/genelleme-hdfs-v1.md)):
+  - **DeepLog ezberlemiyor.** Yanlış alarm oranı eğitimde %0,56, testte %0,55; model küçük, veri büyük.
+  - **Doğrulama sonuçları iyimser.** Paketlenen model, 5 tohum içinde doğrulamada en iyi olandır (seçim yanlılığı). Doğrulamada recall 0,918, testte 0,796. Bu yüzden raporlanan değerler test sonuçlarıdır. Paketin testteki F1'i 0,778 ve EXP-02 aralığıyla tutarlı.
+  - **Sayım yeniliği zamanla bozuluyor.** Yanlış alarm oranı doğrulamada %0,004, testte %0,046. Zaman ilerledikçe daha önce görülmemiş normal desenler ortaya çıkıyor. **Batch katmanında düzenli yeniden eğitim gerekir** (M3/M4'te sıklığı belirlenecek).
+- **Değerlendirme süreci şeffaflığı:** EXP-02 iki kez koşturuldu ve iki koşu da saklandı. İkinci koşudaki iki düzeltmeye (örneklemeli eğitim, çok tohumlu IF seçimi) ilk koşunun test sonuçlarındaki tohum oynaklığı görüldükten sonra karar verildi. Düzeltmeler yalnızca doğrulama setinde sınandı. Testteki etkileri küçüktür (DeepLog+EOS F1 +0,009, IF F1 +0,025).
 - **Sapma kaydı (GOV-05):** Kabul edilen önerideki "Isolation Forest ile anomali tespiti" yerine, karar verici olarak sayım yeniliği ve DeepLog kullanılıyor; Isolation Forest karşılaştırmada kalıyor.
 
 ## Değerlendirilen alternatifler
