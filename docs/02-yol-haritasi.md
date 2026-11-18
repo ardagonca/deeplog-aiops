@@ -10,7 +10,7 @@ Bağlayıcı olan, aşağıdaki tablodaki başarı ölçütleridir. [Tüzük §4
 |---|---|---|---|---|---|---|
 | 1 | 12.05 – 14.07.2026 | Büyük veri altyapısının (Hadoop HDFS, Kafka) Docker üzerinde kurulumu | Hadoop ve Kafka servislerinin hatasız çalışması ve arayüzlerine erişilebilmesi | %10 | M0 | ✅ Kasım 2026'da yeniden kuruldu; dayanıklılık testleri dahil |
 | 2 | 16.07 – 22.09.2026 | Log üretici ve Kafka entegrasyonu ile veri toplama hattı | Saniyede en az 1.000 log verisinin kayıpsız olarak HDFS'e aktarılması | %20 | M1 | ✅ Yeniden kuruldu. 2.000 log/sn'de kayıp 0 ölçüldü; EXP-01 tam ölçümü sürüyor |
-| 3 | 26.09 – 29.11.2026 | Geçmiş veriler üzerinde anomali tespiti modelinin geliştirilmesi ve eğitilmesi | Test verisinde %85 üzeri Precision | %25 | M2 | 🔄 Sürüyor. Resmi bitişten yaklaşık 2 hafta sonra (12.12.2026) tamamlanması hedefleniyor |
+| 3 | 26.09 – 29.11.2026 | Geçmiş veriler üzerinde anomali tespiti modelinin geliştirilmesi ve eğitilmesi | Test verisinde %85 üzeri Precision | %25 | M2 | 🔄 Sürüyor (EXP-02 ilk sonuçlar alındı; ADR-0009) |
 | 4 | 13.12.2026 – 12.03.2027 | Spark Streaming ile canlı analiz ve Ansible ile otonom iyileştirme | Tespitten iyileştirme komutunun gönderilmesine kadar geçen süre < 1 dk | %25 | M3 + M4 | ⏳ |
 | 5 | 13.03 – 12.05.2027 | Web paneli, modüllerin entegrasyonu ve nihai sistem testleri | Canlı veri akışının ve alarmların arayüzde gecikmesiz görüntülenmesi | %20 | M5 + M6 | ⏳ |
 
