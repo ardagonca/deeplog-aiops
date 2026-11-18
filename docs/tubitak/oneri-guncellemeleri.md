@@ -1,26 +1,35 @@
-# TÜBİTAK 2209-A Araştırma Önerisi Formu: Güncelleme Metinleri (GOV-05)
+# TÜBİTAK 2209-A: Kabul Edilen Öneriden Sapmalar ve Sonuç Raporu Malzemesi (GOV-05)
 
-Bu belge, başvuru formunun ("2209 (2).pdf", 2025/1 dönemi taslağı) değişmesi gereken bölümleri için **forma doğrudan aktarılacak yeni metinleri** içerir. Değişikliklerin gerekçeleri ilgili ADR'lerde, sayısal hedefler ise [Proje Tüzüğü §4](../00-proje-tuzugu.md#4-başarı-ölçütleri-kpi) dosyasındadır. Formdaki her sayı o tablodan alınmalıdır.
+Proje kabul edilmiş ve desteklenen bir TÜBİTAK 2209-A projesidir. Resmi dönem **12.05.2026 – 12.05.2027**'dir. Bu belgenin iki amacı var:
 
-> Formu doldurmadan önce: Başvurunun yapılacağı dönemin güncel şablonu TÜBİTAK'tan indirilmeli ve kapak sayfasındaki "2025 Yılı / 2025/1 Dönem" bilgisi güncellenmelidir.
+1. Kabul edilen öneriden yapılan her sapmayı gerekçesi ve kanıtıyla kayda geçirmek. Bu kayıt sonuç raporunda kullanılacaktır.
+2. Sonuç raporunun bölümleri için güncel taslak metinler sağlamak.
 
-## Değişiklik özeti
+Resmi takvim ve durumu [Yol Haritası §1](../02-yol-haritasi.md#1-resmi-çalışma-takvimi-kabul-edilen-öneri)'de, sayısal iç hedefler [Proje Tüzüğü §4](../00-proje-tuzugu.md#4-başarı-ölçütleri-kpi)'te tutulur.
 
-| Form bölümü | Sorun (eski taslak) | Yapılan değişiklik |
+## 1. Sapma kaydı
+
+Formdaki başarı ölçütlerinin hepsi korunmaktadır. Yöntemdeki değişiklikler, bu ölçütlere daha güvenilir biçimde ulaşmak için yapılmıştır.
+
+| Öneride (formun ilgili bölümü) | Sorun | Gerçekleşen / gerekçe |
 |---|---|---|
 | Özet, 1.2, 2 | Ana model Isolation Forest + K-Means, "Spark MLlib ile Isolation Forest" (MLlib'de Isolation Forest yok) | Ana model DeepLog (LSTM) + Drain; Isolation Forest karşılaştırma (baseline) yöntemi ([ADR-0003](../adr/0003-deeplog-ana-model.md)) |
 | Özet, 1.2, Şekil 1 | Apache Flume ve ZooKeeper | Çıkarıldı; Kafka KRaft modunda tek başına alımı üstleniyor ([ADR-0002](../adr/0002-veri-alimi.md)) |
 | 2, Şekil 1 | "Spark Streaming" (eski DStream API'si) | Spark Structured Streaming 4.2 ([ADR-0004](../adr/0004-structured-streaming.md), [ADR-0007](../adr/0007-spark-4-ve-python-310.md)) |
-| 1.2, 3.1, 3.2 | Çelişen hedefler: 500 / 1.000 / 10.000 log/sn; %85 / %90 "doğruluk"; 30 sn / 1 dk | Tek hedef tablosu (K1–K10); "doğruluk" yerine Precision/Recall |
+| 1.2, 3.1, 3.2 | Çelişen hedefler: 500 / 1.000 / 10.000 log/sn; %85 / %90 "doğruluk"; 30 sn / 1 dk | Formdaki takvim ölçütleri (1.000 log/sn, Precision > %85, < 1 dk) bağlayıcı olarak korundu. Bunların üstüne daha sıkı iç hedefler (K1–K10) eklendi; "doğruluk" yerine Precision/Recall raporlanır |
+| 3.1, satır 3 (26.09 – 29.11.2026) | Model aşaması | Sistem Kasım 2026'da ölçülebilir hedefler ve otomatik testlerle yeniden kuruldu; model aşamasının 12.12.2026'da tamamlanması hedefleniyor (yaklaşık 2 hafta gecikme). Sonraki satırların resmi tarihleri değişmiyor |
+| 3.1, satır 3 (Isolation Forest) | Taahhüt edilen yöntem | Isolation Forest **çıkarılmadı**: karşılaştırma yöntemi olarak eğitilir ve formdaki ölçüte (Precision > %85) göre ayrıca raporlanır |
 | Şekil 2 | Arıza tipi ile aksiyon yer değiştirmiş; eşik sabit 0,85 | Disk dolu → Ansible disk temizleme, servis yanıt vermiyor → Docker yeniden başlatma; eşik doğrulama setinde seçilir |
 | 1.1 | "Öngörü" iddiası var, ölçütü yok | Öngörü süresi (lead time) tanımlandı ve H2 hipotezi olarak test ediliyor |
 | 2 | Model doğrulaması yalnızca sentetik hatalarla | Gerçek etiketli HDFS_v1 benchmark'ı (İz A) + demo sistemde arıza enjeksiyonu (İz B) ([ADR-0006](../adr/0006-veri-ve-degerlendirme.md)) |
-| 2, Ön çalışma | "Saniyede 500 log aktarıldı" | Gerçekleştirilen ön çalışmanın ölçülmüş sonuçları |
+| 2, Ön çalışma | "Saniyede 500 log aktarıldı" | Ölçülen sonuçlar §2'deki "Gerçekleştirilen çalışmalar" bölümünde |
 | Ek-1 | Yıl/yazar hataları, tekrar eden kaynak, atıf yapılmayan kaynaklar | Kaynakça düzeltildi |
 
 ---
 
-## Özet (yerine)
+## 2. Sonuç raporu için taslak metinler
+
+### Özet
 
 Bulut ve mikroservis mimarilerinin yaygınlaşması, sistemlerin ürettiği log ve metrik hacmini insanların izleyebileceği düzeyin çok üzerine çıkarmıştır. Geleneksel izleme araçları reaktiftir; alarm, kesinti yaşandıktan sonra gelir. Bu projenin amacı, dağıtık sistemlerden akan log ve metrik verisini gerçek zamanlı işleyen, anormallikleri arıza gerçekleşmeden yakalayan ve tanımlı senaryolarda sistemi insan müdahalesi olmadan toparlayan, tamamen açık kaynak bileşenlerden oluşan bir AIOps prototipi geliştirmektir.
 
@@ -32,7 +41,7 @@ Yöntem, gerçek etiketli Loghub HDFS_v1 veri setinde (575.061 oturum) Precision
 
 ---
 
-## 1.1 Literatür Özeti ve Bilimsel Nitelik (yerine)
+### Literatür özeti ve bilimsel nitelik
 
 Log tabanlı anomali tespiti üzerine yapılan çalışmalar (He vd., 2021; Landauer vd., 2023) iki eğilim göstermektedir. Birincisi, yöntemlerin çoğu geçmişe dönük statik veri setleri üzerinde değerlendirilmekte; canlı akış üzerindeki gecikme ve kaynak kullanımı raporlanmamaktadır. İkincisi, çalışmalar çoğunlukla "tespit" aşamasında kalmakta; tespitin otomatik bir iyileştirme aksiyonuna nasıl dönüştüğü ve bu dönüşümün sistem üzerindeki etkisi ölçülmemektedir. Kendi kendini iyileştiren sistemler literatürü (Ghosh vd., 2007) ise karar ve aksiyon tarafına odaklanmakta, öğrenilmiş anomali modelleriyle bütünleşik açık uygulamalar sunmamaktadır.
 
@@ -49,7 +58,7 @@ DeepLog (Du vd., 2017), sistem loglarını Drain (He vd., 2017) ile şablon kiml
 
 ---
 
-## 1.2 Amaç ve Hedefler (yerine)
+### Amaç ve hedefler
 
 Projenin amacı, dağıtık sistemlerdeki arızaları log dizilerinden erken tespit eden ve tanımlı senaryolarda insan müdahalesi olmadan iyileştiren, açık kaynak bir AIOps prototipini (TRL-4) tasarlamak, geliştirmek ve ölçülebilir hedeflerle doğrulamaktır. Başarı ölçütleri şunlardır:
 
@@ -68,9 +77,9 @@ Projenin amacı, dağıtık sistemlerdeki arızaları log dizilerinden erken tes
 
 ---
 
-## 2. Yöntem: değişen paragraflar
+### Yöntem
 
-**Mimari (Şekil 1 açıklamasının yerine):** Sistem, Lambda mimarisine (Marz ve Warren, 2015) göre üç katmandan oluşur.
+**Mimari:** Sistem, Lambda mimarisine (Marz ve Warren, 2015) göre üç katmandan oluşur.
 - **Alım:** Uygulama logları ve konteyner metrikleri (CPU, bellek, disk G/Ç, ağ) Apache Kafka'ya (Kreps vd., 2011; KRaft modu) gönderilir.
 - **Depolama:** Spark Structured Streaming işi veriyi HDFS üzerindeki veri gölüne Parquet biçiminde, checkpoint mekanizmasıyla kayıpsız ve tekrarsız yazar; sözleşmeye uymayan kayıtları karantinaya ayırır.
 - **Batch katmanı:** Logları Drain ile şablonlara ayırır, DeepLog modelini eğitir.
@@ -78,13 +87,13 @@ Projenin amacı, dağıtık sistemlerdeki arızaları log dizilerinden erken tes
 - **Aksiyon katmanı:** Alarmları tüketen ayrı bir servis, arıza tipini kurallarla belirleyip Docker veya Ansible ile aksiyon alır.
 - **Sunum:** Sonuçlar React tabanlı bir panelde gösterilir.
 
-**Şekil 1'de yapılacak değişiklikler:**
-- Apache Flume kaldırılacak.
-- "Spark Streaming" yerine "Spark Structured Streaming" yazılacak.
-- "Betch Data" yazım hatası "Batch Data" olarak düzeltilecek.
-- Aksiyon katmanına "Remediator (Ansible/Docker)" kutusu eklenecek.
+**Şekil 1'in güncel hali (öneriye göre farklar):**
+- Apache Flume kullanılmıyor (ADR-0002).
+- "Spark Streaming" yerine "Spark Structured Streaming" kullanılıyor.
+- Formdaki şekilde geçen "Betch Data" yazım hatası rapordaki şekilde "Batch Data" olarak düzeltilmelidir.
+- Aksiyon katmanında ayrı bir "Remediator (Ansible/Docker)" servisi var (ADR-0005).
 
-**Otonom karar akışı (Şekil 2 açıklamasının yerine):**
+**Otonom karar akışı:**
 1. Hız katmanı her oturum için 0 ile 1 arasında bir risk skoru üretir. Skor, son tahminlerde gerçekleşen olayın modelin ilk g adayı arasında olmadığı durumların oranıdır; bilinmeyen bir şablon görülürse skor 1 olur.
 2. Eşik, sabit bir değer yerine doğrulama setinde F1'i en yüksek yapan değer olarak seçilir.
 3. Eşik aşıldığında arıza tipi metriklerle birlikte belirlenir:
@@ -93,9 +102,9 @@ Projenin amacı, dağıtık sistemlerdeki arızaları log dizilerinden erken tes
    - Diğer durumlarda yalnızca bildirim yapılır.
 4. Her aksiyon şu korumalardan geçer: izin listesi, aynı hedefe 5 dakikada en fazla 1 aksiyon, saatte en fazla 6 aksiyon, acil durdurma anahtarı.
 
-**Şekil 2'de yapılacak değişiklikler:**
-- "Sistem Cevap Vermiyor" dalı "Docker: Servisi Yeniden Başlat" kutusuna, "Disk Dolu" dalı "Ansible: Disk Temizle" kutusuna bağlanacak. Taslakta bu ikisi yer değiştirmişti.
-- "Skor > 0.85" yerine "Skor > eşik (doğrulama setinde seçilir)" yazılacak.
+**Şekil 2'nin güncel hali (öneriye göre farklar):**
+- "Sistem Cevap Vermiyor" dalı "Docker: Servisi Yeniden Başlat" kutusuna, "Disk Dolu" dalı "Ansible: Disk Temizle" kutusuna bağlıdır. Formdaki şekilde bu ikisi yer değiştirmişti; metin doğruydu. Rapordaki şekil buna göre çizilmelidir.
+- "Skor > 0.85" yerine "Skor > eşik (doğrulama setinde seçilir)" kullanılıyor.
 
 **Veri ve değişkenler:**
 - **İz A (bilimsel değerlendirme):** Gerçek bir Hadoop kümesinden toplanmış, etiketli Loghub HDFS_v1 veri seti kullanılır (Zhu vd., 2023): 11.175.629 log satırı ve 575.061 oturum; oturumların %2,93'ü anormal. Oturumlar zamana göre sıralanıp %60 eğitim (yalnızca normal oturumlar), %10 doğrulama ve %30 test olarak bölünür. Test seti yalnızca bir kez kullanılır.
@@ -111,9 +120,9 @@ Projenin amacı, dağıtık sistemlerdeki arızaları log dizilerinden erken tes
 
 ---
 
-## Ön Çalışma ve Fizibilite (yerine)
+### Gerçekleştirilen çalışmalar ve ölçülen sonuçlar
 
-Proje önerisi öncesinde altyapı ve veri hattı tamamlanmış, aşağıdaki sonuçlar ölçülmüştür. Kodlar ve ölçüm betikleri açık kaynak olarak yayımlanmıştır (https://github.com/ardagonca/deeplog-aiops).
+Resmi takvimin 1. ve 2. satırlarına karşılık gelen altyapı ve veri hattı tamamlanmış, aşağıdaki sonuçlar ölçülmüştür. Kodlar ve ölçüm betikleri açık kaynak olarak yayımlanmıştır (https://github.com/ardagonca/deeplog-aiops).
 
 - **Altyapı:** Kafka 4.3 (KRaft), Hadoop HDFS 3.4 ve Spark 4.2, Docker Compose ile tek bir makinede kuruldu. Sistemin bütünlüğü, Kafka'dan Spark'a ve oradan HDFS'e uzanan otomatik bir uçtan uca testle doğrulanmaktadır.
 - **Dayanıklılık:** Sürekli çalışan 8 servisin her biri süreci zorla sonlandırılarak (SIGKILL) çökertildi; hepsi kendiliğinden yeniden başladı ve 7–43 sn içinde hizmete döndü. Tüm servislerin aynı anda kapatıldığı ani kapanma senaryosunda sistem yaklaşık 60 sn'de geri geldi. Hiçbir senaryoda veri kaybı olmadı (17/17 kontrol).
@@ -123,23 +132,13 @@ Proje önerisi öncesinde altyapı ve veri hattı tamamlanmış, aşağıdaki so
 
 ---
 
-## 3.1 Çalışma Takvimi (yerine)
+### Çalışma takvimi
 
-Ay numaraları proje başlangıcına göredir. Başarı ölçütleri 1.2'deki tabloya atıf yapar.
-
-| Tarih aralığı | Faaliyet | Kim | Başarı ölçütü | Katkı |
-|---|---|---|---|---|
-| Ay 1–2 | Kafka (KRaft), HDFS ve Spark'ın Docker üzerinde kurulumu, sağlık kontrolleri ve otomatik dayanıklılık testleri | Arda Gonca | Tüm servislerin sağlık kontrollerinden geçmesi; uçtan uca testin başarılı olması | %10 |
-| Ay 2–4 | Log ve metrik toplama hattının (replayer, metrik ajanı, Structured Streaming ile HDFS'e yazma) geliştirilmesi | Arda Gonca | K1 ve K2 | %15 |
-| Ay 4–7 | Drain ile log şablonlama, DeepLog modelinin geliştirilmesi ve Isolation Forest ile karşılaştırılması | Arda Gonca | K3 ve K4 | %25 |
-| Ay 7–10 | Structured Streaming ile gerçek zamanlı tespit ile Docker/Ansible tabanlı otonom iyileştirme ve güvenlik korumaları | Arda Gonca | K5, K6, K7, K8; K9 ölçülür | %30 |
-| Ay 10–12 | Web paneli, tüm modüllerin entegrasyonu ve uçtan uca nihai testler | Arda Gonca | K10 ve tüm ölçütlerin tek koşuda yeniden üretilmesi | %20 |
-
-> Başvuru tarihinde tamamlanmış işler (yukarıdaki ilk iki satırın büyük bölümü) Ön Çalışma'ya taşınabilir; bu durumda katkı yüzdeleri toplamı 100 olacak şekilde yeniden dağıtılır.
+Resmi takvim değişmemiştir; satırların durumu ve gerçekleşme tarihleri [Yol Haritası §1](../02-yol-haritasi.md#1-resmi-çalışma-takvimi-kabul-edilen-öneri)'dedir.
 
 ---
 
-## 3.2 Risk Yönetimi (yerine)
+### Riskler ve alınan tedbirler
 
 | En önemli riskler | Alınacak tedbirler (B planı) |
 |---|---|
@@ -151,7 +150,7 @@ Ay numaraları proje başlangıcına göredir. Başarı ölçütleri 1.2'deki ta
 
 ---
 
-## 3.3 Araştırma Olanakları (eklenecek satır)
+### Kullanılan olanaklar
 
 | Altyapı | Kullanım amacı |
 |---|---|
@@ -159,7 +158,7 @@ Ay numaraları proje başlangıcına göredir. Başarı ölçütleri 1.2'deki ta
 
 ---
 
-## Ek-1: Kaynakça (düzeltilmiş)
+## 3. Kaynakça (doğrulanmış)
 
 Düzeltilen ve eklenen kaynaklar:
 - **He vd. survey:** Metinde 2020 olarak geçen atıf 2021 olarak düzeltildi. İkinci yazarın adı "Pinjia, H." değil "He, P." olarak yazıldı.
@@ -200,7 +199,7 @@ Zhu, J., He, S., Liu, J., He, P., Xie, Q., Zheng, Z., & Lyu, M. R. (2019). Tools
 
 > Bifet vd. (2015, StreamDM) metinde kullanılmıyorsa kaynakçadan çıkarılabilir. Kaynakçadaki her kaynağa metinde en az bir atıf olmalıdır.
 
-## Doğrulama notları
+## 4. Kaynakça doğrulama notları
 
 Künyeler 2026-11-18'de web'den doğrulandı. Metinde atıf yapılmayan kaynaklar: Chandola vd. (2009), Liu vd. (2008), Yazdanparast (2024), Zaharia vd. (2010) ve eklenen Zhu vd. (2019). Bunlara metinde atıf eklenmeli ya da kaynakçadan çıkarılmalıdır. Zhu vd. (2019), ön çalışmadaki şablonlama doğruluğu ölçütünün (Grouping Accuracy) kaynağıdır; Ön Çalışma bölümünde bu ölçüt kullanılırsa atıf orada yapılmalıdır.
 
