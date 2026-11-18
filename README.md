@@ -2,7 +2,7 @@
 
 Dağıtık sistemlerden akan log ve metrikleri gerçek zamanlı analiz eden, arızaları erken tespit eden ve tanımlı senaryolarda kendini otonom olarak iyileştiren açık kaynak bir AIOps prototipi. TÜBİTAK 2209-A kapsamında Bartın Üniversitesi'nde geliştirilmektedir.
 
-> **Durum:** M1 – Veri hattı. Loglar replayer ile Kafka'ya, oradan Structured Streaming ile HDFS'e kayıpsız ve tekrarsız akıyor.
+> **Durum:** M1 – Veri hattı. Loglar (replayer) ve konteyner metrikleri (metrics-agent) Kafka üzerinden HDFS'e kayıpsız ve tekrarsız akıyor.
 
 ## Belgeler
 

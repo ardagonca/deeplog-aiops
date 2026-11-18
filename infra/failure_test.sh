@@ -72,11 +72,11 @@ verify_data() { # verify_data <id>: işaret verisi kayıpsız mı?
   fi
 }
 
-crash_and_recover() { # crash_and_recover <servis>: ana Java sürecini SIGKILL ile öldürür
-  local svc=$1 before t0
+crash_and_recover() { # crash_and_recover <servis> [süreç]: servisin ana sürecini SIGKILL ile öldürür
+  local svc=$1 proc=${2:-java} before t0
   before=$(restarts "$svc")
   t0=$SECONDS
-  docker compose exec -T "$svc" pkill -9 -o java >/dev/null 2>&1
+  docker compose exec -T "$svc" pkill -9 -o "$proc" >/dev/null 2>&1
   while ((SECONDS - t0 < 120)) && [ "$(restarts "$svc")" -le "$before" ]; do sleep 1; done
   if [ "$(restarts "$svc")" -le "$before" ]; then
     record T1 FAIL "$svc çöktü ama Docker yeniden başlatmadı ($(state "$svc"))"
@@ -111,6 +111,8 @@ verify_data HAZIRLIK
 
 log "T1: her servis tek tek çökertiliyor"
 for svc in kafka namenode datanode spark-master spark-worker spark-ingest; do crash_and_recover "$svc"; done
+crash_and_recover socket-proxy haproxy
+crash_and_recover metrics-agent python
 verify_data T1-veri
 
 log "T2: tüm servisler aynı anda SIGKILL (ani kapanma)"

@@ -1,11 +1,13 @@
-"""ING-06: logs.raw ile HDFS (raw + karantina) arasında kayıp ve tekrar denetimi.
+"""ING-06: Kafka ile HDFS (raw + karantina) arasında kayıp ve tekrar denetimi, her akış için.
 
-Kafka'da şu an bulunan her (bölüm, offset) HDFS'te tam olarak bir kez yer almalı.
-Ingest geride olabileceği için kayıp sıfırlanana kadar --timeout saniye boyunca yeniden dener.
+Denetimin başında Kafka'daki konumların (bölüm, offset) anlık görüntüsü alınır; bu görüntüdeki
+her konum HDFS'te tam olarak bir kez yer almalı. Anlık görüntü, sürekli yazılan topic'lerde
+(metrics.raw) denetimin kayan bir hedefi kovalamasını önler. Ingest geride olabileceği için
+kayıp sıfırlanana kadar --timeout saniye boyunca yeniden dener.
 Kullanım: docker compose --profile jobs run --rm spark-job /opt/deeplog/jobs/verify_ingest.py
 
-Not: logs.raw silinip yeniden oluşturulursa offset'ler sıfırlanır; raw/karantina bölgeleri ve ingest
-checkpoint'i de silinmelidir (docs/runbooks/altyapi.md).
+Not: Bir topic silinip yeniden oluşturulursa offset'ler sıfırlanır; ilgili raw/karantina
+dizinleri ve ingest checkpoint'i de silinmelidir (docs/runbooks/altyapi.md).
 """
 
 import argparse
@@ -14,7 +16,7 @@ import time
 from pyspark.errors import AnalysisException
 from pyspark.sql import DataFrame, SparkSession
 
-from jobs.ingest_raw import KAFKA, QUARANTINE_PATH, RAW_PATH
+from jobs.ingest_raw import KAFKA, STREAMS, Stream
 
 KEYS = ["partition", "offset"]
 
@@ -28,18 +30,22 @@ def _hdfs_positions(spark: SparkSession, path: str) -> DataFrame:
         return spark.createDataFrame([], "partition INT, offset LONG")
 
 
-def check(spark: SparkSession) -> dict[str, int]:
-    kafka = (
+def kafka_snapshot(spark: SparkSession, topic: str) -> DataFrame:
+    positions = (
         spark.read.format("kafka")
         .option("kafka.bootstrap.servers", KAFKA)
-        .option("subscribe", "logs.raw")
+        .option("subscribe", topic)
         .option("startingOffsets", "earliest")
         .option("endingOffsets", "latest")
         .load()
         .select(*KEYS)
     )
-    raw = _hdfs_positions(spark, RAW_PATH)
-    quarantine = _hdfs_positions(spark, QUARANTINE_PATH)
+    return positions.localCheckpoint(eager=True)  # sonraki okumalarda Kafka'ya tekrar gidilmez
+
+
+def check(spark: SparkSession, s: Stream, kafka: DataFrame) -> dict[str, int]:
+    raw = _hdfs_positions(spark, s.raw_path)
+    quarantine = _hdfs_positions(spark, s.quarantine_path)
     hdfs = raw.unionByName(quarantine)
     return {
         "kafka": kafka.count(),
@@ -52,25 +58,26 @@ def check(spark: SparkSession) -> dict[str, int]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--timeout", type=int, default=300)
+    parser.add_argument("--timeout", type=int, default=420, help="metrikler 5 dk'da bir yazılır")
     args = parser.parse_args()
     spark = SparkSession.builder.appName("verify-ingest").getOrCreate()
+    snapshots = {s.topic: kafka_snapshot(spark, s.topic) for s in STREAMS}
     deadline = time.monotonic() + args.timeout
     while True:
-        result = check(spark)
-        print(f"[denetim] {result}", flush=True)
-        if result["missing"] == 0 or time.monotonic() > deadline:
+        results = {s.topic: check(spark, s, snapshots[s.topic]) for s in STREAMS}
+        print(f"[denetim] {results}", flush=True)
+        if all(r["missing"] == 0 for r in results.values()) or time.monotonic() > deadline:
             break
         time.sleep(15)
     spark.stop()
-    assert result["missing"] == 0, f"KAYIP: Kafka'daki {result['missing']} kayıt HDFS'te yok"
-    assert result["duplicates"] == 0, (
-        f"TEKRAR: {result['duplicates']} Kafka konumu birden çok kez yazılmış"
-    )
-    print(
-        f"INGEST OK: Kafka'daki {result['kafka']:,} kaydın tamamı HDFS'te tam bir kez var "
-        f"(raw {result['raw']:,}, karantina {result['quarantine']:,})"
-    )
+    for topic, r in results.items():
+        assert r["missing"] == 0, f"KAYIP: {topic} için Kafka'daki {r['missing']} kayıt HDFS'te yok"
+        assert r["duplicates"] == 0, f"TEKRAR: {topic} için {r['duplicates']} konum birden çok kez"
+    for topic, r in results.items():
+        print(
+            f"INGEST OK [{topic}]: {r['kafka']:,} kaydın tamamı HDFS'te tam bir kez var "
+            f"(raw {r['raw']:,}, karantina {r['quarantine']:,})"
+        )
 
 
 if __name__ == "__main__":

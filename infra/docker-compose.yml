@@ -217,6 +217,46 @@ services:
       retries: 12
       start_period: 60s
 
+  # ING-05: Docker API'ye salt okuma erişimi. POST (başlat/durdur/yeniden başlat/exec) kapalı;
+  # yalnızca /containers okuma açık. Ajan Docker soketini doğrudan görmez (docs/01-mimari.md §9).
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy:v0.5.0
+    init: true
+    restart: on-failure
+    environment:
+      CONTAINERS: 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    mem_limit: 64m
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:2375/_ping | grep -q OK"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  # ING-05: projedeki konteynerlerin CPU, bellek, disk G/Ç ve ağ ölçümleri, 5 sn'de bir metrics.raw'a.
+  metrics-agent:
+    image: deeplog-agent:1
+    build: images/agent
+    init: true
+    restart: on-failure
+    command: ["python", "-m", "ingestion.metrics_agent",
+              "--docker", "http://socket-proxy:2375", "--bootstrap", "kafka:29092", "--interval", "5"]
+    volumes:
+      - ..:/opt/deeplog:ro
+    depends_on:
+      socket-proxy:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    mem_limit: 128m
+    healthcheck:  # ajan her turda /tmp/heartbeat dosyasına dokunur; 30 sn'den eskiyse sağlıksız
+      test: ["CMD-SHELL", "test $$(( $$(date +%s) - $$(stat -c %Y /tmp/heartbeat) )) -lt 30"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
   # İş göndermek için: docker compose --profile jobs run --rm spark-job /opt/deeplog/jobs/<betik>.py
   spark-job:
     <<: *spark-driver

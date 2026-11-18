@@ -54,7 +54,7 @@ flowchart LR
 | HDFS | Hadoop 3, 1 NameNode + 1 DataNode | Veri gölü, model deposu, streaming checkpoint'leri | INF |
 | Spark | Spark 4.2.1 ([ADR-0007](adr/0007-spark-4-ve-python-310.md)), 1 master + 1 worker. Özel imajda Kafka bağlayıcısı, PyTorch CPU, drain3, pandas ve pyarrow bulunur | Batch ve streaming işleri | INF |
 | Replayer | Python | HDFS_v1 loglarını ayarlanabilir hızla Kafka'ya basar | ING |
-| Metrik ajanı | Python, Docker SDK | Konteyner CPU/RAM metriklerini ve demo sistemin `/health` çıktısını toplar | ING, REM |
+| Metrik ajanı (`metrics-agent`) | Python, Docker Engine API (salt okuma vekili `socket-proxy` üzerinden) | Projedeki konteynerlerin CPU, bellek, disk G/Ç ve ağ ölçümlerini 5 sn'de bir toplar. Demo sistemin `/health` çıktısındaki disk doluluğu REM-01 ile eklenecek | ING, REM |
 | Ingest job (`spark-ingest`) | Structured Streaming | `logs.raw` topic'ini HDFS raw bölgesine Parquet olarak yazar, sözleşmeye uymayanları karantinaya ayırır. `metrics.raw` ve `actions` topic'leri ING-05 ve REM ile eklenecek | ING |
 | Şablonlama job | Spark batch, Drain3 (`mapInPandas`) | Ham logları şablon kimliğine (`template_id`) çevirir, şablon sözlüğü üretir | ML |
 | DeepLog eğitimi | PyTorch (tek düğüm) | Model eğitimi ve değerlendirmesi | ML |
@@ -126,9 +126,13 @@ Tüm mesajlar UTF-8 JSON'dur ve bir `schema_version` alanı taşır. Şemalar IN
 **`metrics.raw`**
 
 ```json
-{"schema_version": 1, "source": "demo-app", "event_time": "...", "cpu_pct": 12.5,
- "mem_bytes": 104857600, "mem_limit_bytes": 268435456, "disk_used_pct": 71.2, "healthy": true}
+{"source": "kafka", "event_time": "2026-11-18T12:34:43.824Z", "mem_bytes": 465309696,
+ "mem_limit_bytes": 1073741824, "blk_read_bytes": 0, "blk_write_bytes": 17850368,
+ "net_rx_bytes": 377278, "net_tx_bytes": 31344713, "cpu_pct": 12.5, "healthy": true,
+ "disk_used_pct": null, "schema_version": 1}
 ```
+
+Bayt alanları sayaçtır, yani konteyner başladığından beri biriken toplamı tutar. Oranlar ardışık iki ölçümün farkından hesaplanır. `cpu_pct` değerinde 100 bir çekirdeğin tam dolu olduğunu gösterir; ilk ölçümde önceki örnek olmadığı için boştur. Kafka mesaj anahtarı `source`'tur (servis adı).
 
 **`alerts`**
 
@@ -183,7 +187,9 @@ Geliştirme makinesinde 32 GB RAM var. WSL2 12 GB bellek ve 6 çekirdekle sını
 | remediator | – | 256 MB |
 | demo-app | 8000 | 256 MB |
 | panel-api | 8001 | 256 MB |
-| **Toplam** | | **~9,3 GB** |
+| socket-proxy | – | 64 MB |
+| metrics-agent | – | 128 MB |
+| **Toplam** | | **~9,5 GB** |
 
 Worker 2 çekirdek ve 2 GB executor belleği sunar. Her Spark uygulaması 1 çekirdek ve 1 GB ile sınırlıdır (`spark.cores.max`); bu sayede sürekli çalışan `spark-ingest`'in yanında aynı anda bir `spark-job` daha çalışabilir. Docker Compose profilleriyle yalnızca o anki iş için gereken servisler açılır. Örneğin model eğitimi sırasında panel ve demo sistem kapalı tutulur.
 
@@ -197,6 +203,7 @@ Worker 2 çekirdek ve 2 GB executor belleği sunar. Her Spark uygulaması 1 çek
 
 ## 9. Güvenlik notları
 
+- Metrik ajanı Docker soketini doğrudan görmez. Araya konan `socket-proxy` yalnızca `GET /containers/*` isteklerine izin verir; başlatma, durdurma, yeniden başlatma ve `exec` 403 ile reddedilir (ING-05'te denendi). Ajan konteynerde root olmayan `nobody` kullanıcısıyla çalışır.
 - Remediator Docker soketine erişir; bu, host üzerinde root yetkisine eşdeğerdir. Bu nedenle yalnızca allowlist'teki konteynerlere aksiyon alır ve laboratuvar dışında çalıştırılmaz (risk R-06).
 - Sırlar (örneğin Slack webhook adresi) `.env` dosyasında tutulur. `.env` git'e girmez; depoya yalnızca `.env.example` konur.
 - Aksiyonlar varsayılan olarak `DRY_RUN=true` modunda çalışır. `AUTOREMEDIATION_ENABLED=false` ayarı tüm aksiyonları anında durdurur (kill switch).
