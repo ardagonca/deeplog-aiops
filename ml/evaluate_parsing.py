@@ -77,7 +77,7 @@ def main() -> int:
         lines += full_dataset_section()
     report = "\n".join(lines) + "\n"
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(report, encoding="utf-8")
+    OUT.write_text(report, encoding="utf-8", newline="\n")  # Windows'ta da LF
     print(report)
     return 0
 
