@@ -10,6 +10,7 @@ Bütün komutlar `infra/` dizininde çalıştırılır. Git Bash kullanılıyors
 | Durumu gör | `docker compose ps -a` |
 | Durdur (veri kalır) | `docker compose down` |
 | Uçtan uca doğrula | `bash smoke_test.sh` (yaklaşık 1 dakika) |
+| Arıza testleri | `bash failure_test.sh` (yaklaşık 8 dakika; servisleri bilerek çökertir, çalışan işler varken çalıştırma) |
 | Bir servisin loglarını izle | `docker compose logs -f <servis>` |
 
 Tek seferlik servisler (`kafka-init`, `hdfs-volume-init`, `hdfs-init`) her açılışta çalışıp `Exited (0)` durumunda kalır; bu normaldir. Bu servislerin işi var olan veriye dokunmadan eksik topic'leri ve dizinleri oluşturmaktır.
@@ -55,6 +56,21 @@ Depodaki `jobs/` klasörü konteynere salt okunur olarak bağlanır, bu yüzden 
    - Dockerfile'daki `FROM` satırını, Kafka jar'larının sürümlerini ve `docker-compose.yml`'deki `image:` etiketini birlikte güncelle.
    - Jar sürümlerini şu POM dosyasındaki `kafka.version` ve `commons-pool2.version` alanlarından al: `https://repo1.maven.org/maven2/org/apache/spark/spark-parent_2.13/<sürüm>/spark-parent_2.13-<sürüm>.pom`
 3. Son olarak imajı build et ve duman testini çalıştır: `docker compose build spark-master && docker compose up -d --wait && bash smoke_test.sh`
+
+## Çökme davranışı
+
+Uzun çalışan servisler `restart: on-failure` ayarıyla çalışır:
+
+- Bir servisin süreci çökerse (sıfır olmayan çıkış kodu, örneğin OOM veya SIGKILL) Docker o servisi kendiliğinden yeniden başlatır.
+- `docker compose stop`, `kill` veya `down` ile elle durdurulan servisler ise yeniden başlatılmaz.
+
+Kafka ve Spark konteynerleri `init: true` ile çalışır. Bu ayarla PID 1 Java değil, küçük bir init sürecidir (tini). Böylece sinyaller doğru iletilir ve zombi süreçler toplanır.
+
+Bir servisin kaç kez yeniden başladığını görmek için:
+
+```bash
+docker inspect deeplog-<servis>-1 --format '{{.RestartCount}}'
+```
 
 ## Sık görülen sorunlar
 

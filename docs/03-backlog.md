@@ -28,6 +28,7 @@ Bu dosya projenin başlangıç backlog'udur. İş takibi GitHub Issues ve Projec
 | INF-06 | Uçtan uca smoke test betiği | Tek komutla Kafka'ya yazılan veri Spark üzerinden HDFS'e ulaşıyor ve doğrulanıyor; toplam süre 2 dakikanın altında | 4 | Must | INF-05 | S2 |
 | INF-07 | `.env.example` ve README hızlı başlangıç bölümü | Temiz klonda README adımları izlenerek sistem ayağa kalkıyor | 2 | Must | INF-06 | S2 |
 | INF-08 | Runbook: altyapıyı başlatma, durdurma ve sıfırlama (`docs/runbooks/altyapi.md`) | HDFS formatlama ve topic sıfırlama adımları dahil | 2 | Should | INF-06 | S2 |
+| INF-09 | Altyapı arıza testleri (`infra/failure_test.sh`) ve çökmede otomatik yeniden başlatma (`restart: on-failure`, `init: true`) | Süreç çökmesi, ani kapanma, DataNode yokluğu ve worker yokluğu senaryolarının hepsi geçiyor; hiçbir senaryoda veri kaybı yok | 6 | Should | INF-06 | S2 |
 
 ## EP-2 ING — Veri hattı (M1)
 

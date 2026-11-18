@@ -6,6 +6,7 @@
 |---|---|---|---|
 | Birim | Şemalar, skor fonksiyonu, arıza tipi kuralları, korumalar | pytest | Her commit (CI) |
 | Entegrasyon | Kafka, Spark ve HDFS arasındaki bağlantılar | Smoke test (INF-06) | Compose dosyası her değiştiğinde ve kilometre taşı kapanışında |
+| Altyapı arıza | Servis çökmesi, ani kapanma, DataNode ve worker yokluğu; her adımda veri kaybı kontrolü | `infra/failure_test.sh` (INF-09) | Compose dosyası veya imaj sürümü değiştiğinde ve kilometre taşı kapanışında |
 | Uçtan uca | Kaynak → alarm → aksiyon → panel | E2E betiği (UI-04) | M5'ten itibaren her sürümde |
 | Performans | Alım hızı ve gecikme | EXP-01, EXP-03, EXP-06 | Kilometre taşı kapanışında |
 | Model değerlendirme | P/R/F1 ve baseline karşılaştırması | EXP-02 | Model her değiştiğinde |
