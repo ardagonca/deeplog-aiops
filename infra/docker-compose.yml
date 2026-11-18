@@ -8,6 +8,18 @@ x-spark: &spark
   environment:
     SPARK_DAEMON_MEMORY: 256m
 
+# Spark sürücüsü (driver) çalıştıran servisler. Depo kökü salt okunur bağlanır; böylece jobs/ ve
+# ingestion/ (ortak sözleşmeler) imajı yeniden build etmeden kullanılır. Executor'lar sürücüye IP ile bağlanır.
+x-spark-driver: &spark-driver
+  image: deeplog-spark:4.2.1
+  build: images/spark
+  entrypoint: ["/bin/bash", "-c",
+               "exec /opt/spark/bin/spark-submit --conf spark.driver.host=$$(hostname -i) \"$$@\"", "--"]
+  volumes:
+    - ..:/opt/deeplog:ro
+  environment:
+    PYTHONPATH: /opt/deeplog
+
 services:
   kafka:
     image: apache/kafka:4.3.2
@@ -178,15 +190,37 @@ services:
       retries: 12
       start_period: 15s
 
+  # ING-04: logs.raw -> HDFS raw bölgesi, sürekli çalışan Structured Streaming işi.
+  # kafka-init ve hdfs-init'e "başarıyla tamamlandı" koşuluyla bağlıdır; bu, topic'lerin ve dizinlerin
+  # hazır olmasını garanti eder ve `docker compose up --wait`in bu tek seferlik servislerin
+  # çıkışını hata saymasını önler.
+  spark-ingest:
+    <<: *spark-driver
+    hostname: spark-ingest
+    init: true
+    restart: on-failure
+    command: ["/opt/deeplog/jobs/ingest_raw.py"]
+    ports:
+      - "127.0.0.1:4040:4040"
+    depends_on:
+      spark-worker:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      hdfs-init:
+        condition: service_completed_successfully
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:4040/ > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
   # İş göndermek için: docker compose --profile jobs run --rm spark-job /opt/deeplog/jobs/<betik>.py
-  # Sürücü bu konteynerde çalışır; executor'lar ona IP adresinden bağlanır.
   spark-job:
-    <<: *spark
+    <<: *spark-driver
     profiles: ["jobs"]
-    entrypoint: ["/bin/bash", "-c",
-                 "exec /opt/spark/bin/spark-submit --conf spark.driver.host=$$(hostname -i) \"$$@\"", "--"]
-    volumes:
-      - ../jobs:/opt/deeplog/jobs:ro
     depends_on:
       spark-worker:
         condition: service_healthy
