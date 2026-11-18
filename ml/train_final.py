@@ -71,6 +71,14 @@ def main() -> int:
     )
     metrics = {
         "secilen_tohum": seed,
+        # Aynı tohum, farklı iş parçacığı sayısında farklı model verir (kayan nokta toplam sırası).
+        "egitim": {
+            "epoch": EPOCHS,
+            "batch": BATCH,
+            "lr": LR,
+            "torch_is_parcacigi": args.threads,
+            "torch": torch.__version__,
+        },
         "dogrulama": {"deeplog_eos": val_metrics, "sayim_yeniligi": novelty_val},
         "test_sonuclari": "experiments/EXP-02 (bu paket test setiyle seçilmedi)",
     }
