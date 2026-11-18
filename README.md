@@ -2,7 +2,7 @@
 
 Dağıtık sistemlerden akan log ve metrikleri gerçek zamanlı analiz eden, arızaları erken tespit eden ve tanımlı senaryolarda kendini otonom olarak iyileştiren açık kaynak bir AIOps prototipi. TÜBİTAK 2209-A kapsamında Bartın Üniversitesi'nde geliştirilmektedir.
 
-> **Durum:** M0 – Temel, S2. Kafka, HDFS ve Spark çalışıyor ve uçtan uca duman testi geçiyor.
+> **Durum:** M1 – Veri hattı. Loglar replayer ile Kafka'ya, oradan Structured Streaming ile HDFS'e kayıpsız ve tekrarsız akıyor.
 
 ## Belgeler
 
@@ -28,10 +28,10 @@ uv run pytest                    # birim testleri
 uv run python -m ingestion.download_dataset   # HDFS_v1 veri seti (187 MB indirme, 1,8 GB açık)
 
 cd infra
-docker compose up -d --wait      # Kafka + HDFS + Spark; ilk açılışta Spark imajı build edilir (~5 dk)
+docker compose up -d --wait      # Kafka + HDFS + Spark + ingest işi; ilk açılışta Spark imajı build edilir (~5 dk)
 bash smoke_test.sh               # uçtan uca doğrulama: Kafka -> Spark -> HDFS
 cd ..
-uv run python -m ingestion.replayer --rate 5000 --limit 300000   # HDFS_v1 -> Kafka logs.raw
+uv run python -m ingestion.replayer --rate 5000 --limit 300000   # HDFS_v1 -> Kafka logs.raw -> (spark-ingest) -> HDFS
 ```
 
 Arayüz adresleri, Spark işi çalıştırma ve sıfırlama adımları için bkz. [altyapı runbook'u](docs/runbooks/altyapi.md).

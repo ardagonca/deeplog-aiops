@@ -110,16 +110,20 @@ docker compose exec -T namenode bash -c \
 verify_data HAZIRLIK
 
 log "T1: her servis tek tek çökertiliyor"
-for svc in kafka namenode datanode spark-master spark-worker; do crash_and_recover "$svc"; done
+for svc in kafka namenode datanode spark-master spark-worker spark-ingest; do crash_and_recover "$svc"; done
 verify_data T1-veri
 
 log "T2: tüm servisler aynı anda SIGKILL (ani kapanma)"
 docker compose kill >/dev/null 2>&1
 t0=$SECONDS
-if docker compose up -d --wait >/dev/null 2>&1 && hdfs_ready 120 && worker_registered 90; then
-  record T2 PASS "tüm sistem ani kapanmadan $((SECONDS - t0)) sn'de geri geldi"
+if ! up_out=$(docker compose up -d --wait 2>&1); then
+  record T2 FAIL "docker compose up --wait başarısız: $(echo "$up_out" | grep -viE 'running|started|healthy|waiting|created' | tail -1)"
+elif ! hdfs_ready 120; then
+  record T2 FAIL "sistem açıldı ama HDFS 120 sn içinde hazır olmadı"
+elif ! worker_registered 90; then
+  record T2 FAIL "sistem açıldı ama Spark worker 90 sn içinde kayıt olmadı"
 else
-  record T2 FAIL "sistem ani kapanmadan sonra geri gelmedi"
+  record T2 PASS "tüm sistem ani kapanmadan $((SECONDS - t0)) sn'de geri geldi"
 fi
 verify_data T2-veri
 

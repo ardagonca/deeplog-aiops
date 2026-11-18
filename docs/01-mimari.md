@@ -55,7 +55,7 @@ flowchart LR
 | Spark | Spark 4.2.1 ([ADR-0007](adr/0007-spark-4-ve-python-310.md)), 1 master + 1 worker. Özel imajda Kafka bağlayıcısı, PyTorch CPU, drain3, pandas ve pyarrow bulunur | Batch ve streaming işleri | INF |
 | Replayer | Python | HDFS_v1 loglarını ayarlanabilir hızla Kafka'ya basar | ING |
 | Metrik ajanı | Python, Docker SDK | Konteyner CPU/RAM metriklerini ve demo sistemin `/health` çıktısını toplar | ING, REM |
-| Ingest job | Structured Streaming | `logs.raw`, `metrics.raw` ve `actions` topic'lerini HDFS raw bölgesine Parquet olarak yazar | ING |
+| Ingest job (`spark-ingest`) | Structured Streaming | `logs.raw` topic'ini HDFS raw bölgesine Parquet olarak yazar, sözleşmeye uymayanları karantinaya ayırır. `metrics.raw` ve `actions` topic'leri ING-05 ve REM ile eklenecek | ING |
 | Şablonlama job | Spark batch, Drain3 (`mapInPandas`) | Ham logları şablon kimliğine (`template_id`) çevirir, şablon sözlüğü üretir | ML |
 | DeepLog eğitimi | PyTorch (tek düğüm) | Model eğitimi ve değerlendirmesi | ML |
 | Tespit job | Structured Streaming, `applyInPandasWithState` | Oturum bazlı risk skoru üretir, eşik aşılınca alarm yazar | RT |
@@ -158,11 +158,14 @@ Alanların alabileceği değerler:
 /datalake/raw/logs/date=YYYY-MM-DD/hour=HH/*.parquet
 /datalake/raw/metrics/date=YYYY-MM-DD/*.parquet
 /datalake/raw/actions/date=YYYY-MM-DD/*.parquet
+/datalake/quarantine/logs/date=YYYY-MM-DD/*.parquet          (sözleşmeye uymayan kayıtlar: ham değer + neden)
 /datalake/curated/events/source=<kaynak>/date=YYYY-MM-DD/   (template_id eklenmiş)
 /datalake/views/daily_summary/                              (panel için batch görünümü)
 /models/deeplog/<iz>-vN/{model.pt, templates.json, config.yaml, metrics.json}
 /checkpoints/<job>/                                         (Structured Streaming checkpoint'leri)
 ```
+
+`raw/logs` satırları `LogEvent` alanlarının yanında Kafka konumunu (`kafka_partition`, `kafka_offset`, `kafka_timestamp`) ve `ingest_time` alanını taşır. Kayıp ve tekrar denetimi (`jobs/verify_ingest.py`) bu konum üzerinden yapılır. Bölgeler Structured Streaming dosya hedefiyle yazılır; okuyucular dizin kökünü okumalıdır. Böylece yalnızca `_spark_metadata` günlüğüne işlenmiş dosyalar görülür, yarım kalan bir micro-batch'in dosyaları görülmez.
 
 ## 7. Servisler, portlar ve kaynak bütçesi
 
@@ -175,13 +178,14 @@ Geliştirme makinesinde 32 GB RAM var. WSL2 12 GB bellek ve 6 çekirdekle sını
 | datanode | 9864 (UI) | 1 GB |
 | spark-master | 8080 (UI), 7077 | 512 MB |
 | spark-worker | 8081 (UI) | 3 GB |
-| spark job sürücüsü | 4040 (UI) | 1 GB |
+| spark-ingest (sürekli sürücü) | 4040 (UI) | 1 GB |
+| spark-job (geçici sürücü) | – | 1 GB |
 | remediator | – | 256 MB |
 | demo-app | 8000 | 256 MB |
 | panel-api | 8001 | 256 MB |
-| **Toplam** | | **~8,3 GB** |
+| **Toplam** | | **~9,3 GB** |
 
-Docker Compose profilleriyle yalnızca o anki iş için gereken servisler açılır. Örneğin model eğitimi sırasında panel ve demo sistem kapalı tutulur.
+Worker 2 çekirdek ve 2 GB executor belleği sunar. Her Spark uygulaması 1 çekirdek ve 1 GB ile sınırlıdır (`spark.cores.max`); bu sayede sürekli çalışan `spark-ingest`'in yanında aynı anda bir `spark-job` daha çalışabilir. Docker Compose profilleriyle yalnızca o anki iş için gereken servisler açılır. Örneğin model eğitimi sırasında panel ve demo sistem kapalı tutulur.
 
 ## 8. Ortamlar
 
