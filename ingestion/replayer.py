@@ -35,13 +35,13 @@ def load_labels(path: Path) -> dict[str, int]:
         return {row["BlockId"]: int(row["Label"] == "Anomaly") for row in csv.DictReader(f)}
 
 
-def to_event(line: str, labels: dict[str, int], now: datetime) -> LogEvent:
+def to_event(line: str, labels: dict[str, int], now: datetime, source: str = SOURCE) -> LogEvent:
     line = line.rstrip("\r\n")
     parts = line.split(" ", 4)  # tarih saat pid seviye "bileşen: içerik"
     block = match.group() if (match := BLOCK_ID.search(line)) else None
     return LogEvent(
         id=str(uuid.uuid4()),
-        source=SOURCE,
+        source=source,
         event_time=now.isoformat(timespec="milliseconds").replace("+00:00", "Z"),
         message=line,
         session_key=block,
@@ -58,6 +58,7 @@ def replay(
     limit: int | None = None,
     clock: Callable[[], float] = time.perf_counter,
     sleep: Callable[[float], None] = time.sleep,
+    source: str = SOURCE,
 ) -> int:
     """Satırları LogEvent'e çevirip gönderir; gönderilen mesaj sayısını döner.
 
@@ -73,8 +74,8 @@ def replay(
             continue
         if rate > 0 and (delay := start + sent / rate - clock()) > 0:
             sleep(delay)
-        event = to_event(line, labels, datetime.now(timezone.utc))
-        send(event.to_json(), (event.session_key or SOURCE).encode())
+        event = to_event(line, labels, datetime.now(timezone.utc), source)
+        send(event.to_json(), (event.session_key or source).encode())
         sent += 1
         if sent % PROGRESS_EVERY == 0:
             elapsed = clock() - start
@@ -93,6 +94,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--limit", type=int, help="en fazla bu kadar mesaj gönder")
     parser.add_argument("--topic", default="logs.raw")
     parser.add_argument("--bootstrap", default="127.0.0.1:9092")
+    parser.add_argument(
+        "--source",
+        default=SOURCE,
+        help=f"varsayılan '{SOURCE}' yalnızca ML'in kullanacağı tek kanonik oynatma içindir; "
+        "testler ve deneyler kendi adını vermelidir (ör. exp01-r5000-1)",
+    )
     parser.add_argument("--log", type=Path, default=DATA_DIR / "HDFS.log")
     parser.add_argument(
         "--labels", type=Path, default=DATA_DIR / "preprocessed" / "anomaly_label.csv"
@@ -141,7 +148,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"{args.log.name} -> {args.topic} @ {args.bootstrap}, hedef {args.rate:,.0f} log/sn")
     start = time.perf_counter()
     with args.log.open(encoding="utf-8", errors="replace") as lines:
-        sent = replay(lines, send, labels, args.rate, args.limit)
+        sent = replay(lines, send, labels, args.rate, args.limit, source=args.source)
     send_secs = time.perf_counter() - start
     undelivered = producer.flush(60)
     total_secs = time.perf_counter() - start
