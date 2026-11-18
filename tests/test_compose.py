@@ -27,13 +27,14 @@ def test_every_service_has_mem_limit():
     assert not missing, f"mem_limit eksik: {missing}"
 
 
-def test_long_running_services_fit_ram_budget():
+def test_services_running_together_fit_ram_budget():
+    # -init servisleri açılışta çalışıp çıkar; -job (Spark sürücüsü) diğerleriyle birlikte çalışır.
     total = sum(_gb(s["mem_limit"]) for n, s in _services().items() if not n.endswith("-init"))
     assert total <= RAM_BUDGET_GB, f"Toplam {total:.1f} GB > {RAM_BUDGET_GB} GB bütçe"
 
 
 def test_long_running_services_have_healthcheck():
     for name, svc in _services().items():
-        if not name.endswith("-init"):
-            # Tek seferlik servislerin adı -init ile biter ve healthcheck gerektirmez.
+        if not name.endswith(("-init", "-job")):
+            # Tek seferlik servislerin adı -init veya -job ile biter ve healthcheck gerektirmez.
             assert "healthcheck" in svc, f"{name}: healthcheck yok"

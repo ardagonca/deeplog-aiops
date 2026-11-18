@@ -2,7 +2,7 @@
 
 Dağıtık sistemlerden akan log ve metrikleri gerçek zamanlı analiz eden, arızaları erken tespit eden ve tanımlı senaryolarda kendini otonom olarak iyileştiren açık kaynak bir AIOps prototipi. TÜBİTAK 2209-A kapsamında Bartın Üniversitesi'nde geliştirilmektedir.
 
-> **Durum:** M0 – Temel, S1. Kafka ve HDFS çalışıyor. Sırada Spark imajı (INF-04) var.
+> **Durum:** M0 – Temel, S2. Kafka, HDFS ve Spark çalışıyor ve uçtan uca duman testi geçiyor.
 
 ## Belgeler
 
@@ -22,15 +22,13 @@ Dağıtık sistemlerden akan log ve metrikleri gerçek zamanlı analiz eden, ar�
 Gereksinimler: Docker Desktop (WSL2 için en az 12 GB bellek) ve [uv](https://docs.astral.sh/uv/).
 
 ```bash
-uv sync                                  # geliştirme araçları (Python 3.11)
-uv run pre-commit install                # commit öncesi ruff ve diğer kontroller
-cd infra && docker compose up -d --wait  # Kafka + HDFS; topic'ler ve HDFS dizinleri otomatik oluşur
-uv run pytest                            # testler
+uv sync                          # geliştirme araçları (Python 3.10)
+uv run pre-commit install        # commit öncesi ruff ve diğer kontroller
+uv run pytest                    # birim testleri
+
+cd infra
+docker compose up -d --wait      # Kafka + HDFS + Spark; ilk açılışta Spark imajı build edilir (~5 dk)
+bash smoke_test.sh               # uçtan uca doğrulama: Kafka -> Spark -> HDFS
 ```
 
-| Arayüz | Adres |
-|---|---|
-| HDFS NameNode | http://localhost:9870 |
-| Kafka (host'tan) | `localhost:9092` |
-
-Spark ve `.env` adımları INF-04 ve INF-07 ile eklenecek.
+Arayüz adresleri, Spark işi çalıştırma ve sıfırlama adımları için bkz. [altyapı runbook'u](docs/runbooks/altyapi.md).

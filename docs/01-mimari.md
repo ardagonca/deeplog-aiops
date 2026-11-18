@@ -52,7 +52,7 @@ flowchart LR
 |---|---|---|---|
 | Kafka | Apache Kafka, KRaft modu, tek broker | Tüm olayların omurgası | INF |
 | HDFS | Hadoop 3, 1 NameNode + 1 DataNode | Veri gölü, model deposu, streaming checkpoint'leri | INF |
-| Spark | Spark 3.5, 1 master + 1 worker. Özel imajda PyTorch CPU, drain3 ve pyarrow bulunur | Batch ve streaming işleri | INF |
+| Spark | Spark 4.2.1 ([ADR-0007](adr/0007-spark-4-ve-python-310.md)), 1 master + 1 worker. Özel imajda Kafka bağlayıcısı, PyTorch CPU, drain3, pandas ve pyarrow bulunur | Batch ve streaming işleri | INF |
 | Replayer | Python | HDFS_v1 loglarını ayarlanabilir hızla Kafka'ya basar | ING |
 | Metrik ajanı | Python, Docker SDK | Konteyner CPU/RAM metriklerini ve demo sistemin `/health` çıktısını toplar | ING, REM |
 | Ingest job | Structured Streaming | `logs.raw`, `metrics.raw` ve `actions` topic'lerini HDFS raw bölgesine Parquet olarak yazar | ING |

@@ -23,7 +23,7 @@ Bu dosya projenin başlangıç backlog'udur. İş takibi GitHub Issues ve Projec
 | INF-01 | Docker Desktop ve WSL2 bellek sınırı (`.wslconfig`) | `docker info` çalışıyor; WSL2 sınırı [Mimari §7](01-mimari.md#7-servisler-portlar-ve-kaynak-bütçesi)'deki bütçeye uygun | 1 | Must | – | S1 |
 | INF-02 | Kafka (KRaft, tek broker) ve topic oluşturma betiği | Dört topic [Mimari §4](01-mimari.md#4-kafka-topicleri)'teki ayarlarla oluşuyor; produce/consume smoke testi geçiyor | 4 | Must | INF-01 | S1 |
 | INF-03 | HDFS (NameNode + DataNode) | NameNode arayüzü açılıyor; dosya yazma/okuma testi geçiyor; veri volume'da kalıcı | 6 | Must | INF-01 | S1 |
-| INF-04 | Özel Spark imajı (Spark 3.5, PyTorch CPU, drain3, pyarrow) | Master ve worker ayakta; worker'da `import torch, drain3` çalışıyor; sürücü ve worker'da Python minör sürümü aynı | 6 | Must | INF-01 | S2 |
+| INF-04 | Özel Spark imajı (Spark 4.2.1, Kafka bağlayıcısı, PyTorch CPU, drain3, pyarrow) | Master ve worker ayakta; worker'da `import torch, drain3` çalışıyor; sürücü ve worker'da Python minör sürümü aynı | 6 | Must | INF-01 | S2 |
 | INF-05 | Tüm servislerde healthcheck, RAM limitleri ve compose profilleri | `docker compose ps` her servisi `healthy` gösteriyor; limitler Mimari §7 ile birebir | 3 | Must | INF-02..04 | S2 |
 | INF-06 | Uçtan uca smoke test betiği | Tek komutla Kafka'ya yazılan veri Spark üzerinden HDFS'e ulaşıyor ve doğrulanıyor; toplam süre 2 dakikanın altında | 4 | Must | INF-05 | S2 |
 | INF-07 | `.env.example` ve README hızlı başlangıç bölümü | Temiz klonda README adımları izlenerek sistem ayağa kalkıyor | 2 | Must | INF-06 | S2 |
