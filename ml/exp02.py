@@ -261,7 +261,7 @@ def main() -> int:
     out = ROOT / "experiments" / "EXP-02" / datetime.now().strftime("%Y-%m-%d_%H%M")
     out.mkdir(parents=True, exist_ok=True)
     (out / "results.json").write_text(
-        json.dumps(result, indent=2, default=float), encoding="utf-8", newline="\n"
+        json.dumps(result, indent=2, default=float) + "\n", encoding="utf-8", newline="\n"
     )
     text = report(result)
     (out / "ozet.md").write_text(text, encoding="utf-8", newline="\n")

@@ -46,7 +46,7 @@ Her deney koşusu `experiments/EXP-XX/<tarih>/` klasörüne şunları yazar: kul
 | ID | Ne ölçer | KPI | Kurulum | Tekrar | Raporlanan |
 |---|---|---|---|---|---|
 | EXP-01 | Alım hızı ve kayıp | K1, K2 | Replayer sabit hızlarda: 1.000, 2.500, 5.000 ve 10.000 log/sn; her koşu 11 dakika | Her hız için 3 | Ortalama ± std, kayıp ve tekrar oranı |
-| EXP-02 | Model başarısı | K3, K4 | HDFS_v1 test seti; DeepLog ve Isolation Forest karşılaştırması | 5 farklı seed | P/R/F1 ortalama ± std; McNemar testi medyan F1'e sahip seed üzerinde yapılır |
+| EXP-02 | Model başarısı | K3, K4 ve formdaki "Precision > %85" | HDFS_v1 test seti (resmi şablonlar, ADR-0008). Dört yöntem: DeepLog (makaledeki hali; g=9 ve doğrulamada seçilen g), DeepLog + oturum sonu (EOS), Isolation Forest (ayarı doğrulamada ızgarayla seçilir), olay sayımı yeniliği (referans). Tüm seçimler yalnızca doğrulama setinde; komut: `uv run python -m ml.exp02` | 5 tohum | P/R/F1 ortalama ± std, medyan tohumda Precision için %95 Wilson aralığı, McNemar karşılaştırmaları; IF ızgara tablosu |
 | EXP-03 | Tespit gecikmesi | K5 | HDFS_v1 test oturumları 5.000 log/sn hızla oynatılır | 3 koşu, her biri en az 100 alarm | p50 ve p95 |
 | EXP-04 | Otonom döngü | K6, K7, K9 | 4 arıza senaryosu (2 kademeli, 2 ani) | Senaryo başına 20 | Başarı oranı (%95 Wilson güven aralığıyla), TTR p50/p95, lead time medyanı; H2 için tek örneklem Wilcoxon testi |
 | EXP-05 | Gereksiz aksiyon | K8 | 2 saatlik normal yük, hiç arıza enjekte edilmez | 1 | Aksiyon sayısı ve alarm sayısı |
