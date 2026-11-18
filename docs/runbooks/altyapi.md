@@ -11,6 +11,7 @@ Bütün komutlar `infra/` dizininde çalıştırılır. Git Bash kullanılıyors
 | Durdur (veri kalır) | `docker compose down` |
 | Uçtan uca doğrula | `bash smoke_test.sh` (yaklaşık 1 dakika) |
 | Ingest kabul testi | `bash ingest_test.sh` (yaklaşık 3 dakika; 150.000 mesaj, yazarken ingest'i çökertir, kayıp/tekrar denetler) |
+| Metrik akışını izle | `docker compose logs -f metrics-agent` ve `docker compose exec kafka /opt/kafka/bin/kafka-get-offsets.sh --bootstrap-server kafka:29092 --topic metrics.raw` |
 | Ingest kayıp/tekrar denetimi | `docker compose --profile jobs run --rm spark-job /opt/deeplog/jobs/verify_ingest.py` |
 | Arıza testleri | `bash failure_test.sh` (yaklaşık 8 dakika; servisleri bilerek çökertir, çalışan işler varken çalıştırma) |
 | Bir servisin loglarını izle | `docker compose logs -f <servis>` |
@@ -43,7 +44,7 @@ Depo kökü konteynerin `/opt/deeplog` dizinine salt okunur olarak bağlanır ve
 | İş | Komut |
 |---|---|
 | Tek bir topic'i boşalt | `docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --delete --topic <topic>` ve ardından `docker compose up kafka-init` |
-| `logs.raw`'ı sıfırla | Önce `docker compose stop spark-ingest`. Sonra topic'i sil ve yeniden oluştur (yukarıdaki satır). Ardından `/checkpoints/ingest_raw`, `/datalake/raw/logs` ve `/datalake/quarantine/logs` dizinlerini sil ve `docker compose up -d --wait` çalıştır. **Checkpoint silinmezse ingest, olmayan offset'leri bekleyip hata verir (failOnDataLoss).** |
+| `logs.raw`'ı sıfırla | Önce `docker compose stop spark-ingest`. Sonra topic'i sil ve yeniden oluştur (yukarıdaki satır). Ardından `/checkpoints/ingest_raw/logs`, `/checkpoints/ingest_raw/quarantine`, `/datalake/raw/logs` ve `/datalake/quarantine/logs` dizinlerini sil (`metrics.raw` için karşılıkları: `metrics`, `metrics_quarantine`, `/datalake/raw/metrics`, `/datalake/quarantine/metrics`) ve `docker compose up -d --wait` çalıştır. **Checkpoint silinmezse ingest, olmayan offset'leri bekleyip hata verir (failOnDataLoss).** |
 | HDFS'te bir dizini sil | `docker compose exec namenode hdfs dfs -rm -r -skipTrash <yol>` |
 | Her şeyi sıfırla (Kafka + HDFS) | `docker compose down -v` ve ardından `docker compose up -d --wait` |
 
