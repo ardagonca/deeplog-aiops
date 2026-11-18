@@ -131,6 +131,15 @@ Resmi takvimin 1. ve 2. satırlarına karşılık gelen altyapı ve veri hattı 
 - **Kayıpsız alım:** 150.003 kayıt yazılırken alım işi zorla sonlandırıldı. İş kendiliğinden yeniden başladı ve kaldığı yerden devam etti; Kafka'daki her kayıt HDFS'te tam olarak bir kez bulundu (kayıp 0, tekrar 0). Biçimi bozuk kayıtlar düşürülmeden, nedenleriyle birlikte karantinaya ayrıldı.
 - **Metrik toplama:** Konteyner metrikleri, yalnızca okuma izni olan bir Docker API vekili üzerinden 5 sn aralıkla toplanmaktadır (ölçülen medyan aralık 5,0 sn, p95 5,06 sn).
 - **Alım hızı (EXP-01):** _[Deney sürüyor; sonuçlar `experiments/EXP-01/` altındaki özetten aktarılacak.]_
+- **Şablonlama (ML-01):** Loghub'ın elle etiketlenmiş 2.000 satırlık HDFS örneğinde Drain'in gruplama doğruluğu 1,0'dır. Tam HDFS_v1'de resmi 29 şablon satırların %100'ünü kapsıyor; Loghub'ın blok dizileriyle %100 uyumlu ([ADR-0008](../adr/0008-sablon-kaynagi.md)).
+- **Oturumlar (ML-02):** 575.061 blok oturumu kuruldu ve resmi veriyle birebir örtüşüyor. Oturumlar kronolojik olarak bölündü: eğitimde 333.878 normal oturum; doğrulamada 57.506 oturum (anormal %3,40); testte 172.519 oturum (anormal %2,16).
+- **Anomali tespiti (EXP-02, test seti, 5 tohum):**
+  - Olay sayımı yeniliği: Precision 0,980, Recall 1,000, F1 0,990. **Formdaki "Precision > %85" ölçütü sağlandı.**
+  - DeepLog + oturum sonu: F1 0,717 ± 0,064.
+  - Makaledeki haliyle DeepLog: F1 0,627.
+  - Isolation Forest (öneride taahhüt edilen yöntem): Precision 0,824, F1 0,427.
+
+  DeepLog, Isolation Forest'tan anlamlı ölçüde iyidir (McNemar p ≈ 10⁻¹⁴⁹). Yöntem seçiminin gerekçesi [ADR-0009](../adr/0009-hibrit-tespit.md)'dadır.
 
 ---
 
