@@ -23,9 +23,21 @@ def count_matrix(ds: Dataset, idx: np.ndarray) -> np.ndarray:
     return flat.reshape(len(idx), ds.vocab_size).astype(np.float32)
 
 
-def fit(X_train: np.ndarray, seed: int, n_estimators: int = 100) -> IsolationForest:
+def fit(
+    X_train: np.ndarray,
+    seed: int,
+    n_estimators: int = 100,
+    max_samples: int | str = "auto",
+    n_jobs: int = -1,
+) -> IsolationForest:
+    """max_samples: her ağacın örneklem büyüklüğü. Varsayılan ("auto" = 256) HDFS'te zayıf;
+    EXP-02 değeri doğrulama setinde ızgara ile seçer."""
     model = IsolationForest(
-        n_estimators=n_estimators, contamination="auto", n_jobs=-1, random_state=seed
+        n_estimators=n_estimators,
+        max_samples=min(max_samples, len(X_train)) if isinstance(max_samples, int) else max_samples,
+        contamination="auto",
+        n_jobs=n_jobs,
+        random_state=seed,
     )
     return model.fit(X_train)
 

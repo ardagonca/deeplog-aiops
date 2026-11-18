@@ -20,11 +20,43 @@ def _all_windows(seq: np.ndarray, h: int) -> np.ndarray:
     return np.lib.stride_tricks.sliding_window_view(padded, h + 1)
 
 
-def windows(sequences: Sequence[np.ndarray], h: int = 10):
-    """Eğitim örnekleri: aynı (pencere, hedef) çiftleri tekilleşir, weights tekrar sayısıdır."""
-    rows = np.concatenate([_all_windows(s, h) for s in sequences])
-    unique, counts = np.unique(rows, axis=0, return_counts=True)
-    return unique[:, :h].copy(), unique[:, h].copy(), counts.astype(np.float32)
+def windows(sequences: Sequence[np.ndarray], h: int = 10, seq_weights=None):
+    """Eğitim örnekleri: aynı (pencere, hedef) çiftleri tekilleşir, weights tekrar sayısıdır.
+
+    seq_weights verilirse her dizi o kadar kez tekrarlanmış sayılır; böylece önce aynı oturumlar
+    birleştirilip (unique_sequences) sonuç tam veriyle birebir aynı kalacak şekilde hızlanır."""
+    per_seq = [_all_windows(s, h) for s in sequences]
+    rows = np.concatenate(per_seq)
+    row_weights = np.repeat(
+        np.ones(len(per_seq)) if seq_weights is None else np.asarray(seq_weights, dtype=float),
+        [len(w) for w in per_seq],
+    )
+    unique, inverse = np.unique(rows, axis=0, return_inverse=True)
+    weights = np.bincount(inverse.ravel(), weights=row_weights, minlength=len(unique))
+    return unique[:, :h].copy(), unique[:, h].copy(), weights.astype(np.float32)
+
+
+def with_eos(sequences: Sequence[np.ndarray], eos: int) -> list[np.ndarray]:
+    """Her oturumun sonuna "oturum sonu" olayı ekler (eos genellikle vocab_size; model bir büyük
+    sözlükle kurulur). Model böylece oturumun ne zaman bitmesi gerektiğini de öğrenir: erken
+    biten bir oturumda (ör. beklenen kayıt olayları gelmeden) sonu tahmin etmek bir sapma olur.
+    Makaledeki DeepLog'a eklenen bir uzantıdır; EXP-02 iki hali ayrı raporlar."""
+    return [np.append(np.asarray(s, dtype=np.int64), eos) for s in sequences]
+
+
+def unique_sequences(sequences: Sequence[np.ndarray]):
+    """Aynı oturumları birleştirir: (benzersiz diziler, her birinin sayısı, geri eşleme).
+    HDFS oturumları çok tekrarlıdır; eğitim ve değerlendirme benzersiz diziler üzerinde yapılır."""
+    index: dict[bytes, int] = {}
+    inverse = np.empty(len(sequences), dtype=np.int64)
+    uniques: list[np.ndarray] = []
+    for i, s in enumerate(sequences):
+        key = np.asarray(s, dtype=np.int8).tobytes()
+        j = index.setdefault(key, len(uniques))
+        if j == len(uniques):
+            uniques.append(np.asarray(s))
+        inverse[i] = j
+    return uniques, np.bincount(inverse, minlength=len(uniques)), inverse
 
 
 class DeepLog(nn.Module):
@@ -67,23 +99,32 @@ def train(model, X, y, weights, epochs, batch_size=2048, lr=1e-3, seed=0) -> lis
     return losses
 
 
-def detect(model, sequences, h=10, g=9, batch_size=8192) -> np.ndarray:
-    """Oturum başına anormal mi: herhangi bir konumda gerçek olay ilk g tahminde değilse ya da
-    bilinmeyen (PAD) ise True. Tüm pencereler toplu değerlendirilir, sonuç oturuma toplanır."""
+def session_max_rank(model, sequences, h=10, batch_size=8192) -> np.ndarray:
+    """Oturum skoru: her konumda gerçek olayın tahmin sıralamasındaki yeri (0 = en olası;
+    kendisinden kesin büyük logit sayısı), oturum boyunca en kötüsü. Bilinmeyen (PAD) olay
+    vocab_size alır.
+    DeepLog kuralı "gerçek olay ilk g tahminde değilse anormal", skor >= g demektir; tek ileri
+    geçişle tüm g değerleri değerlendirilebilir ve g doğrulama setinde seçilebilir."""
     if not len(sequences):
-        return np.zeros(0, dtype=bool)
+        return np.zeros(0, dtype=np.int64)
     if any(len(s) == 0 for s in sequences):
         raise ValueError("boş oturum değerlendirilemez")
     per_seq = [_all_windows(s, h) for s in sequences]
     rows = np.concatenate(per_seq)
     starts = np.concatenate([[0], np.cumsum([len(w) for w in per_seq])[:-1]])
-    miss = np.zeros(len(rows), dtype=bool)
+    rank = np.empty(len(rows), dtype=np.int64)
     model.eval()
     with torch.no_grad():
         for start in range(0, len(rows), batch_size):
             chunk = torch.as_tensor(rows[start : start + batch_size])
-            top = model(chunk[:, :h]).topk(min(g, model.vocab_size), dim=1).indices
-            target = chunk[:, h]
-            hit = (top == target[:, None]).any(dim=1)
-            miss[start : start + len(chunk)] = (~hit | (target == PAD)).numpy()
-    return np.maximum.reduceat(miss, starts)
+            logits, target = model(chunk[:, :h]), chunk[:, h]
+            r = (logits > logits.gather(1, target[:, None])).sum(dim=1)
+            r[target == PAD] = model.vocab_size
+            rank[start : start + len(chunk)] = r.numpy()
+    return np.maximum.reduceat(rank, starts)
+
+
+def detect(model, sequences, h=10, g=9, batch_size=8192) -> np.ndarray:
+    """Oturum başına anormal mi: herhangi bir konumda gerçek olay ilk g tahminde değilse ya da
+    bilinmeyen (PAD) ise True."""
+    return session_max_rank(model, sequences, h, batch_size) >= g
