@@ -1,6 +1,6 @@
 # ADR-0004: Hız katmanında Spark Structured Streaming
 
-- Durum: Kabul
+- Durum: Kabul. Sürüm bilgisi [ADR-0007](0007-spark-4-ve-python-310.md) ile güncellendi (Spark 4.2.1).
 - Tarih: 2026-11-17
 
 ## Bağlam

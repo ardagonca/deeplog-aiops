@@ -2,6 +2,12 @@
 # (tests/test_compose.py kontrol eder).
 name: deeplog
 
+x-spark: &spark
+  image: deeplog-spark:4.2.1
+  build: images/spark
+  environment:
+    SPARK_DAEMON_MEMORY: 256m
+
 services:
   kafka:
     image: apache/kafka:4.3.2
@@ -128,6 +134,56 @@ services:
       datanode:
         condition: service_healthy
     mem_limit: 512m
+
+  spark-master:
+    <<: *spark
+    hostname: spark-master
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master", "--host", "spark-master"]
+    ports:
+      - "127.0.0.1:8080:8080"
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:8080/ > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  spark-worker:
+    <<: *spark
+    hostname: spark-worker
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker",
+              "--cores", "2", "--memory", "2g", "spark://spark-master:7077"]
+    ports:
+      - "127.0.0.1:8081:8081"
+    depends_on:
+      spark-master:
+        condition: service_healthy
+    mem_limit: 3g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:8081/ > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  # İş göndermek için: docker compose --profile jobs run --rm spark-job /opt/deeplog/jobs/<betik>.py
+  # Sürücü bu konteynerde çalışır; executor'lar ona IP adresinden bağlanır.
+  spark-job:
+    <<: *spark
+    profiles: ["jobs"]
+    entrypoint: ["/bin/bash", "-c",
+                 "exec /opt/spark/bin/spark-submit --conf spark.driver.host=$$(hostname -i) \"$$@\"", "--"]
+    volumes:
+      - ../jobs:/opt/deeplog/jobs:ro
+    depends_on:
+      spark-worker:
+        condition: service_healthy
+      datanode:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    mem_limit: 1g
 
 volumes:
   kafka_data:

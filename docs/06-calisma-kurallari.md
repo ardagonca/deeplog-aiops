@@ -14,7 +14,7 @@ SemVer kullanılır. Her kilometre taşı kapanışında bir etiket atılır (v0
 
 ## Kod standartları
 
-- Ana makinedeki araçlar Python 3.11 ile çalışır. Spark işlerinde ise sürücü ve worker'daki Python minör sürümü aynı olmalıdır (INF-04).
+- Python 3.10 hem makinede hem Spark imajında kullanılır, çünkü sürücü ve executor aynı minör sürümde olmalıdır ([ADR-0007](adr/0007-spark-4-ve-python-310.md)).
 - Lint ve biçimlendirme için ruff kullanılır. Public fonksiyonlarda tip ipuçları zorunludur.
 - Yapılandırma ortam değişkenleriyle (`.env`) yapılır. Kodda sabit host, port veya parola bulunmaz.
 - Loglar stdout'a JSON satırları olarak yazılır.
