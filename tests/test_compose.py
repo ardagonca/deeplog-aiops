@@ -38,3 +38,10 @@ def test_long_running_services_have_healthcheck():
         if not name.endswith(("-init", "-job")):
             # Tek seferlik servislerin adı -init veya -job ile biter ve healthcheck gerektirmez.
             assert "healthcheck" in svc, f"{name}: healthcheck yok"
+
+
+def test_long_running_services_restart_on_crash():
+    # infra/failure_test.sh T1 senaryosu bu politikaya dayanır.
+    for name, svc in _services().items():
+        if not name.endswith(("-init", "-job")):
+            assert svc.get("restart") == "on-failure", f"{name}: restart: on-failure yok"

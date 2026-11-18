@@ -12,6 +12,10 @@ services:
   kafka:
     image: apache/kafka:4.3.2
     hostname: kafka
+    # init: Java PID 1 olursa içeriden SIGKILL almaz ve zombi süreçleri toplamaz; tini PID 1 olur.
+    # restart: süreç çökünce (sıfır olmayan çıkış) Docker yeniden başlatır; elle durdurulunca başlatmaz.
+    init: true
+    restart: on-failure
     ports:
       - "127.0.0.1:9092:9092"
     environment:
@@ -76,6 +80,7 @@ services:
   namenode:
     image: apache/hadoop:3.4.3
     hostname: namenode
+    restart: on-failure
     command: ["hdfs", "namenode"]
     ports:
       - "127.0.0.1:9870:9870"
@@ -100,6 +105,7 @@ services:
   datanode:
     image: apache/hadoop:3.4.3
     hostname: datanode
+    restart: on-failure
     command: ["hdfs", "datanode"]
     ports:
       - "127.0.0.1:9864:9864"
@@ -138,6 +144,8 @@ services:
   spark-master:
     <<: *spark
     hostname: spark-master
+    init: true
+    restart: on-failure
     command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master", "--host", "spark-master"]
     ports:
       - "127.0.0.1:8080:8080"
@@ -152,6 +160,8 @@ services:
   spark-worker:
     <<: *spark
     hostname: spark-worker
+    init: true
+    restart: on-failure
     command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker",
               "--cores", "2", "--memory", "2g", "spark://spark-master:7077"]
     ports:
