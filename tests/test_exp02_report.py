@@ -17,7 +17,9 @@ def test_report_renders_verdicts_and_tables():
     res = {
         "seeds": [0, 1],
         "runs": runs,
-        "if_grid": [{"max_samples": m, "n_estimators": n, **_r(0.5, 0.5)} for m, n in IF_GRID],
+        "if_grid": [
+            {"max_samples": m, "n_estimators": n, "f1": 0.5, "f1_std": 0.1} for m, n in IF_GRID
+        ],
         "if_choice": (65536, 300),
         "mcnemar": {"deeplog_eos vs iforest": mc, "novelty vs deeplog_eos": mc},
         "config": "commit: abc\n",

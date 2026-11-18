@@ -89,14 +89,22 @@ def run_deeplog(data: Data, seed: int, eos: bool):
     return out, pred
 
 
-def if_grid(data: Data, n_jobs: int) -> list[dict]:
+def if_grid(data: Data, seeds: list[int], n_jobs: int) -> list[dict]:
+    """Her ayar tüm tohumlarla denenir; seçim ortalama doğrulama F1'iyle yapılır. Tek tohumla
+    seçilen ayar diğer tohumlara genellenmiyordu (ilk koşu: 5 tohumun 3'ünde test F1 0,27)."""
     rows = []
     for ms, n in IF_GRID:
         size = len(data.counts["train"]) if ms == "tümü" else ms
-        model = fit(data.counts["train"], 0, n_estimators=n, max_samples=size, n_jobs=n_jobs)
-        s = scores(model, data.counts["val"])
-        thr, _ = best_threshold(s, data.y["val"])
-        rows.append({"max_samples": ms, "n_estimators": n, **prf(data.y["val"], s >= thr)})
+        f1s = []
+        for seed in seeds:
+            model = fit(data.counts["train"], seed, n_estimators=n, max_samples=size, n_jobs=n_jobs)
+            s = scores(model, data.counts["val"])
+            thr, _ = best_threshold(s, data.y["val"])
+            f1s.append(prf(data.y["val"], s >= thr)["f1"])
+        std = statistics.stdev(f1s) if len(f1s) > 1 else 0.0
+        rows.append(
+            {"max_samples": ms, "n_estimators": n, "f1": statistics.mean(f1s), "f1_std": std}
+        )
     return rows
 
 
@@ -188,15 +196,14 @@ def report(res: dict) -> str:
         lines.append(f"| {pair} | {m['b']:,} | {m['c']:,} | {m['p_value']:.3g} |")
     lines += [
         "",
-        "## Isolation Forest ızgarası (doğrulama seti, tohum 0)",
+        "## Isolation Forest ızgarası (doğrulama seti; tüm tohumların ortalaması ± std)",
         "",
-        "| max_samples | n_estimators | Precision | Recall | F1 |",
-        "|---|---|---|---|---|",
+        "| max_samples | n_estimators | Doğrulama F1 |",
+        "|---|---|---|",
     ]
     for g in res["if_grid"]:
         lines.append(
-            f"| {g['max_samples']} | {g['n_estimators']} | {g['precision']:.4f} "
-            f"| {g['recall']:.4f} | {g['f1']:.4f} |"
+            f"| {g['max_samples']} | {g['n_estimators']} | {g['f1']:.4f} ± {g['f1_std']:.4f} |"
         )
     lines += ["", "## Ayarlar", "", "```", res["config"].strip(), "```", ""]
     return "\n".join(lines)
@@ -216,7 +223,7 @@ def main() -> int:
     started = time.time()
 
     data = Data(dataset.load())
-    grid = if_grid(data, args.threads)
+    grid = if_grid(data, seeds, args.threads)
     best = max(grid, key=lambda g: g["f1"])
     if_choice = (best["max_samples"], best["n_estimators"])
     print(f"IF ızgarası: seçilen {if_choice} (doğrulama F1 {best['f1']:.4f})", flush=True)
