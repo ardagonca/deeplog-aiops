@@ -166,7 +166,7 @@ Düzeltilen ve eklenen kaynaklar:
 - **Landauer vd. (2023):** Kaynakçada iki kez geçiyordu; tekrar kaldırıldı.
 - **Blessing vd. (2025):** Yayın yeri belirtilmediği için çıkarıldı.
 - **Pahl ve Jamshidi:** Künyesi doğrulanamadığı için çıkarıldı.
-- **Eklenenler:** Zhu vd. (2023), Armbrust vd. (2018), Lerner (2014).
+- **Eklenenler:** Zhu vd. (2023), Zhu vd. (2019), Armbrust vd. (2018), Lerner (2014). Tüm künyeler web üzerinden doğrulandı; ayrıntılar en alttaki "Doğrulama notları" bölümünde.
 
 Armbrust, M., Das, T., Torres, J., Yavuz, B., Zhu, S., Xin, R., Ghodsi, A., Stoica, I., & Zaharia, M. (2018). Structured streaming: A declarative API for real-time applications in Apache Spark. In *Proceedings of the 2018 International Conference on Management of Data (SIGMOD '18)* (pp. 601–613). ACM. https://doi.org/10.1145/3183713.3190664
 
