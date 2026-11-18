@@ -30,6 +30,8 @@ uv run python -m ingestion.download_dataset   # HDFS_v1 veri seti (187 MB indirm
 cd infra
 docker compose up -d --wait      # Kafka + HDFS + Spark; ilk açılışta Spark imajı build edilir (~5 dk)
 bash smoke_test.sh               # uçtan uca doğrulama: Kafka -> Spark -> HDFS
+cd ..
+uv run python -m ingestion.replayer --rate 5000 --limit 300000   # HDFS_v1 -> Kafka logs.raw
 ```
 
 Arayüz adresleri, Spark işi çalıştırma ve sıfırlama adımları için bkz. [altyapı runbook'u](docs/runbooks/altyapi.md).

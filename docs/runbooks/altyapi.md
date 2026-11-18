@@ -22,7 +22,7 @@ Tek seferlik servisler (`kafka-init`, `hdfs-volume-init`, `hdfs-init`) her açı
 | HDFS NameNode | http://localhost:9870 |
 | Spark master | http://localhost:8080 |
 | Spark worker | http://localhost:8081 |
-| Kafka (makineden erişim) | `localhost:9092` |
+| Kafka (makineden erişim) | `127.0.0.1:9092` |
 | Kafka (konteynerler arası) | `kafka:29092` |
 
 ## Spark işi çalıştırma

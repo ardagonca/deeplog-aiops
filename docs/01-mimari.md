@@ -101,10 +101,12 @@ Bu akıştaki zaman damgalarından iki KPI hesaplanır: K5 = t1 − t0 ve K6 = t
 
 | Topic | Üretici | Tüketici | Anahtar | Bölüm | Saklama |
 |---|---|---|---|---|---|
-| `logs.raw` | Replayer, demo sistem | Ingest, Tespit | `source` | 3 | 24 sa |
+| `logs.raw` | Replayer, demo sistem | Ingest, Tespit | `session_key` (yoksa `source`) | 3 | 24 sa |
 | `metrics.raw` | Metrik ajanı | Ingest, Remediator | `source` | 1 | 24 sa |
 | `alerts` | Tespit job | Remediator, Panel API | `source` | 1 | 7 gün |
 | `actions` | Remediator | Ingest, Panel API | `source` | 1 | 7 gün |
+
+`logs.raw` topic'inin anahtarı `session_key`'dir. Bunun iki nedeni var: Bir oturumun olayları aynı bölüme düşer ve sırası korunur, ki DeepLog dizi modeli bu sıraya dayanır. Ayrıca HDFS_v1'deki 575 bin oturum üç bölüme dengeli dağılır. `source` anahtar olsaydı tüm HDFS logları tek bölüme giderdi (ING-03'te ölçülen dağılım: 99.567 / 98.533 / 101.900).
 
 ## 5. Veri sözleşmeleri
 

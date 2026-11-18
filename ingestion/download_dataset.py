@@ -74,6 +74,7 @@ def extract(archive: Path, target: Path) -> bool:
 def main(argv: list[str] | None = None) -> int:
     # Windows'ta yönlendirilen çıktı cp1252 olur ve Türkçe karakterler hata verir.
     sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     # choices yok: argparse, nargs="*" iken varsayılan listeyi choices'a karşı yanlış denetliyor.
     parser.add_argument("datasets", nargs="*", help=f"varsayılan: hepsi ({', '.join(DATASETS)})")
