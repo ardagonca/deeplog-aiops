@@ -10,11 +10,28 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "drain3==0.9.11",
     "pre-commit>=4",
     "pytest>=9.2.0",
     "pyyaml>=6.0.3",
     "ruff>=0.17.5",
 ]
+# Model eğitimi ve değerlendirmesi (M2). torch sürümü Spark imajındakiyle aynı tutulur
+# (infra/images/spark/requirements.txt).
+ml = [
+    "numpy>=2.2",
+    "scikit-learn>=1.6",
+    "scipy>=1.14",
+    "torch==2.14.1",
+]
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [tool.ruff]
 target-version = "py310"

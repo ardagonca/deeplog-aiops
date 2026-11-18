@@ -2,7 +2,7 @@
 
 Dağıtık sistemlerden akan log ve metrikleri gerçek zamanlı analiz eden, arızaları erken tespit eden ve tanımlı senaryolarda kendini otonom olarak iyileştiren açık kaynak bir AIOps prototipi. TÜBİTAK 2209-A kapsamında Bartın Üniversitesi'nde geliştirilmektedir.
 
-> **Durum:** M1 – Veri hattı. Loglar (replayer) ve konteyner metrikleri (metrics-agent) Kafka üzerinden HDFS'e kayıpsız ve tekrarsız akıyor.
+> **Durum:** M2 – Model. Veri hattı kayıpsız çalışıyor (10.000 log/sn'de kayıp 0). HDFS_v1'de model sonuçları: olay sayımı yeniliği F1 0,990, DeepLog + oturum sonu F1 0,717 (EXP-02, ADR-0009); model `hdfs-v1` HDFS'te. Sırada M3: gerçek zamanlı tespit.
 
 ## Belgeler
 
@@ -16,7 +16,7 @@ Dağıtık sistemlerden akan log ve metrikleri gerçek zamanlı analiz eden, ar�
 | [Risk Kaydı](docs/05-risk-kaydi.md) | Riskler, olasılık/etki, erken uyarılar, B planları |
 | [Çalışma Kuralları](docs/06-calisma-kurallari.md) | Git akışı, kod standartları, DoR/DoD, ritüeller |
 | [Mimari Karar Kayıtları](docs/adr/README.md) | Teknoloji ve yöntem seçimlerinin gerekçeleri |
-| [TÜBİTAK Formu Güncellemeleri](docs/tubitak/oneri-guncellemeleri.md) | Başvuru formuna aktarılacak güncel metinler (GOV-05) |
+| [TÜBİTAK Sapma Kaydı ve Rapor Malzemesi](docs/tubitak/oneri-guncellemeleri.md) | Kabul edilen öneriden sapmalar, gerekçeleri ve sonuç raporu taslak metinleri (GOV-05) |
 | [Altyapı Runbook'u](docs/runbooks/altyapi.md) | Başlatma, test, deney, sıfırlama ve sorun giderme komutları |
 
 ## Hızlı başlangıç

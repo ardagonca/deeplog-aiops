@@ -6,11 +6,13 @@ Her ADR tek bir kararı ve o kararın gerekçesini kayda geçirir. Kabul edilmi�
 |---|---|---|
 | [0001](0001-lambda-mimarisi.md) | Lambda mimarisi | Kabul |
 | [0002](0002-veri-alimi.md) | Kafka (KRaft) → Structured Streaming → HDFS Parquet; Flume ve ZooKeeper kullanılmaz | Kabul |
-| [0003](0003-deeplog-ana-model.md) | Drain + DeepLog ana model, Isolation Forest baseline | Kabul |
+| [0003](0003-deeplog-ana-model.md) | Drain + DeepLog ana model, Isolation Forest baseline | Kabul (şablon kaynağı HDFS_v1 için: 0008) |
 | [0004](0004-structured-streaming.md) | Hız katmanında Spark Structured Streaming | Kabul (sürüm: 0007) |
 | [0005](0005-remediator-ayri-servis.md) | Otonom aksiyonlar ayrı bir servis (Remediator) üzerinden | Kabul |
 | [0006](0006-veri-ve-degerlendirme.md) | İki izli veri ve değerlendirme stratejisi | Kabul |
 | [0007](0007-spark-4-ve-python-310.md) | Spark 4.2.1 ve Python 3.10 | Kabul |
+| [0008](0008-sablon-kaynagi.md) | HDFS_v1'de resmi Loghub şablonları, demo sistemde Drain | Kabul |
+| [0009](0009-hibrit-tespit.md) | Oturum kararı sayım yeniliğiyle, erken uyarı DeepLog ile | Önerildi |
 
 ## Şablon
 

@@ -4,11 +4,12 @@
 |---|---|
 | Proje | Dağıtık Sistemlerde Hata Öngörüsü ve Otonom İyileştirme Sağlayan Büyük Veri Tabanlı AIOps Platformu |
 | Program | TÜBİTAK 2209-A Üniversite Öğrencileri Araştırma Projeleri |
+| Durum | **Kabul edildi, destekleniyor.** Resmi dönem: 12.05.2026 – 12.05.2027 |
 | Kurum | Bartın Üniversitesi |
 | Proje yürütücüsü | Arda Gonca |
 | Danışman | Bartın Üniversitesi öğretim üyesi |
 | Hedef olgunluk | TRL-4 (laboratuvar ortamında doğrulanmış prototip) |
-| Son güncelleme | 2026-11-17 |
+| Son güncelleme | 2026-11-18 |
 
 ## 1. Problem
 
@@ -40,7 +41,7 @@ Log dizilerindeki anormallikleri arıza gerçekleşmeden yakalayan, tanımlı se
 
 ## 4. Başarı ölçütleri (KPI)
 
-Bu tablo projenin **tek doğru kaynağıdır**. TÜBİTAK formundaki (Amaç ve Hedefler, Çalışma Takvimi, Risk Yönetimi) tüm sayılar buradan alınır. Bir hedef değişecekse önce bu tablo güncellenir ve değişiklik danışmanın onayından geçer. Ölçümlerin nasıl yapıldığı [Test Stratejisi §2](04-test-stratejisi.md#2-metrik-tanımları) bölümünde tanımlıdır.
+**Bağlayıcı ölçütler**, kabul edilen önerinin çalışma takvimindekilerdir: 1.000 log/sn kayıpsız aktarım, test verisinde Precision > %85, tespitten iyileştirme komutuna < 1 dk ve canlı akışın arayüzde gecikmesiz görüntülenmesi ([Yol Haritası §1](02-yol-haritasi.md#1-resmi-çalışma-takvimi-kabul-edilen-öneri)). Aşağıdaki K1–K10 bu ölçütlerin hepsini kapsar ve onlardan daha sıkıdır. Bu tablo iç hedeflerin **tek doğru kaynağıdır**; raporlardaki tüm sayılar buradan alınır. Bir hedef değişecekse önce bu tablo güncellenir ve değişiklik danışmanın onayından geçer. Ölçümlerin nasıl yapıldığı [Test Stratejisi §2](04-test-stratejisi.md#2-metrik-tanımları) bölümünde tanımlıdır.
 
 | ID | Ölçüt | Hedef | Deney | Kilometre taşı |
 |---|---|---|---|---|
@@ -70,6 +71,7 @@ Bu tablo projenin **tek doğru kaynağıdır**. TÜBİTAK formundaki (Amaç ve H
 | Çalışan prototip (TRL-4) ve açık kaynak GitHub deposu | M5 | Ekonomik/Ticari/Sosyal |
 | Deney raporu (K1–K10 sonuçları) | M6 | Bilimsel/Akademik |
 | Lisans bitirme tezi taslağı | M6 | Bilimsel/Akademik |
+| TÜBİTAK sonuç raporu (sapma kaydı dahil, GOV-05) | M6 | – |
 | Ulusal kongre bildirisi taslağı (UYMS veya IEEE öğrenci konferansı) | M6 | Bilimsel/Akademik |
 
 ## 7. Paydaşlar ve sorumluluklar (RACI)
@@ -93,6 +95,7 @@ R: yapan, A: onaylayan, C: danışılan, I: bilgilendirilen
 
 **Kısıtlar**
 
+- Resmi bitiş tarihi 12.05.2027'dir ve kaydırılamaz.
 - Tek geliştirici çalışıyor. Kapasite dönem içinde haftada yaklaşık 12 saat, sınav dönemlerinde bunun yarısı, tatillerde yaklaşık 20 saat.
 - Tek dizüstü bilgisayar kullanılıyor (Windows 11, Docker Desktop, WSL2). RAM bütçesi için bkz. [Mimari §7](01-mimari.md#7-servisler-portlar-ve-kaynak-bütçesi).
 - Ücretli yazılım veya bulut kullanılmayacak. Bulut yalnızca öğrenci kredisiyle ve B planı olarak devreye girer.

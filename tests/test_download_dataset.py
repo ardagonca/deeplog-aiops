@@ -14,7 +14,7 @@ def test_main_defaults_to_all_datasets_and_rejects_unknown(monkeypatch, tmp_path
     monkeypatch.setattr(download_dataset, "fetch", lambda url, dest, sha: calls.append(dest.name))
     monkeypatch.setattr(download_dataset, "extract", lambda archive, target: False)
     assert download_dataset.main([]) == 0
-    assert calls == [f"{name}.zip" for name in download_dataset.DATASETS]
+    assert calls == [entry[2] for entry in download_dataset.DATASETS.values()]
     with pytest.raises(SystemExit):
         download_dataset.main(["YOK"])
 

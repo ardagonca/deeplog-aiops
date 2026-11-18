@@ -76,7 +76,7 @@ def main(run_dir: str) -> int:
     results = [json.loads(line) for line in lines if line.strip()]
     summary = summarize(results)
     report = to_markdown(summary, (path / "config.txt").read_text(encoding="utf-8"))
-    (path / "ozet.md").write_text(report, encoding="utf-8")
+    (path / "ozet.md").write_text(report, encoding="utf-8", newline="\n")  # Windows'ta da LF
     print(report)
     return 0 if summary["k1"] is True and summary["k2"] else 1
 
