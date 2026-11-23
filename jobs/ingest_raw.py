@@ -34,18 +34,26 @@ class Stream:
     quarantine_query: str
     partitions: tuple[str, ...]
     trigger: str
+    # Kafka'da saklama süresi (24 sa) dolduğu için silinmiş offset'lerde: True = sorgu durur.
+    # Yığın 24 saatten uzun kapalı kalırsa tüketilmemiş veri silinir; bu durumda False olan akış
+    # uyarıyla en eski mevcut offset'ten devam eder, True olan durur ve elle karar beklenir.
+    fail_on_data_loss: bool
 
 
 STREAMS = (
     Stream(
         "logs.raw", LogEvent, "/datalake/raw/logs", "/datalake/quarantine/logs",
         "logs", "quarantine", ("date", "hour"), os.environ.get("INGEST_TRIGGER", "30 seconds"),
+        fail_on_data_loss=True,  # ana veri: kayıp sessizce geçilmez (K2)
     ),
     # Metrikler gerçek zamanlı olarak Kafka'dan okunur (Remediator); HDFS kopyası toplu analiz
     # içindir. 5 dk'lık tetikleyici, 5 sn'lik ölçümlerin binlerce küçük dosyaya bölünmesini önler.
     Stream(
         "metrics.raw", MetricEvent, "/datalake/raw/metrics", "/datalake/quarantine/metrics",
         "metrics", "metrics_quarantine", ("date",), os.environ.get("METRICS_TRIGGER", "5 minutes"),
+        # telemetri: silinmiş ölçüm geri gelmez; 20.11.2026'da bu yüzden sorgu 3 gün çöküp
+        # yeniden başladı ve aynı süreçteki log sorgusunu da her seferinde düşürdü
+        fail_on_data_loss=False,
     ),
 )  # fmt: skip
 
@@ -90,6 +98,7 @@ def start_stream(spark: SparkSession, s: Stream) -> None:
         .option("subscribe", s.topic)
         .option("startingOffsets", "earliest")
         .option("maxOffsetsPerTrigger", 500_000)
+        .option("failOnDataLoss", str(s.fail_on_data_loss).lower())
         .load()
         .select(
             F.col("value").cast("string").alias("raw"),
