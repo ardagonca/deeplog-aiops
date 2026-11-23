@@ -201,7 +201,7 @@ Worker 2 çekirdek ve 2 GB executor belleği sunar. Her Spark uygulaması 1 çek
 |---|---|---|
 | local | Geliştirme ve deneyler | Tek makinede Docker Compose |
 | CI | Lint ve birim testleri | GitHub Actions (konteyner gerektirmez) |
-| cloud (B planı) | Donanım yetmezse | GCP veya AWS öğrenci kredisi, aynı compose dosyası |
+| cloud | Büyük ölçekli veri seti (Thunderbird) ve çok düğümlü ölçeklenme deneyleri; donanım yetmezse B planı | AWS EC2, aynı imajlar ve compose yapısı; bütçe ve harcama denetimi [Bulut Bütçe Planı](07-bulut-butcesi.md)'nda |
 
 ## 9. Güvenlik notları
 
