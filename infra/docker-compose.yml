@@ -418,6 +418,8 @@ services:
       DOCKER_HOST: tcp://remediation-proxy:2375
       DRY_RUN: ${REMEDIATION_DRY_RUN:-true}  # deneylerde false (ADR-0005)
       AUTOREMEDIATION_ENABLED: ${AUTOREMEDIATION_ENABLED:-true}  # kill switch
+      REMEDIATION_COOLDOWN_SEC: ${REMEDIATION_COOLDOWN_SEC:-300}
+      REMEDIATION_MAX_PER_HOUR: ${REMEDIATION_MAX_PER_HOUR:-6}
       TARGETS: demo-app=deeplog-demo-app-1
       ALERT_SOURCES: demo-app=demo-app,demo-client=demo-app
       HEALTH_URLS: demo-app=http://demo-app:8000/health

@@ -8,6 +8,8 @@ Compose'taki remediator servisi çalıştırır (profil: demo). Ortam değişken
   ALERT_SOURCES            alarm kaynağı=hedef, ör. demo-app=demo-app,demo-client=demo-app
   HEALTH_URLS              hedef=url; Remediator her saniye yoklar (service_unresponsive kuralı)
   DOCKER_HOST              yalnızca Remediator'ın ağındaki Docker API vekili
+  REMEDIATION_COOLDOWN_SEC hedef başına bekleme (varsayılan 300); REMEDIATION_MAX_PER_HOUR (6).
+                           EXP-04 koşuları sıklaştırmak için kısaltır; EXP-05 (K8) varsayılanla.
 Yalnızca ALERT_SOURCES'taki kaynakların alarmları işlenir; diğer izlerin (HDFS_v1) alarmları bu
 servisin sorumluluğunda değildir ve kayıt da üretmez.
 """
@@ -26,7 +28,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ingestion.schemas import ActionEvent, AlertEvent, MetricEvent
-from remediation.decide import Guards, TargetState, decide
+from remediation.decide import COOLDOWN_S, MAX_PER_HOUR, Guards, TargetState, decide
 
 PLAYBOOKS = Path(__file__).parent / "playbooks"
 HEARTBEAT = Path("/tmp/heartbeat")
@@ -163,7 +165,12 @@ def main() -> int:
     containers = pairs(env.get("TARGETS", "demo-app=deeplog-demo-app-1"))
     health_urls = pairs(env.get("HEALTH_URLS", "demo-app=http://demo-app:8000/health"))
     rem = Remediator(
-        Guards(env.get("AUTOREMEDIATION_ENABLED", "true") == "true", set(containers)),
+        Guards(
+            env.get("AUTOREMEDIATION_ENABLED", "true") == "true",
+            set(containers),
+            cooldown_s=float(env.get("REMEDIATION_COOLDOWN_SEC", COOLDOWN_S)),
+            max_per_hour=int(env.get("REMEDIATION_MAX_PER_HOUR", MAX_PER_HOUR)),
+        ),
         pairs(env.get("ALERT_SOURCES", "demo-app=demo-app,demo-client=demo-app")),
         {
             "docker:restart": docker_restart(env["DOCKER_HOST"], containers),
@@ -202,7 +209,9 @@ def main() -> int:
     for loop in (metrics_loop, health_loop):
         threading.Thread(target=loop, daemon=True).start()
     alerts = consumer("alerts", "remediator")
-    log("INFO", "başladı", dry_run=rem.dry_run, enabled=rem.guards.enabled, targets=containers)
+    g = rem.guards
+    log("INFO", "başladı", dry_run=rem.dry_run, enabled=g.enabled, targets=containers,
+        cooldown_s=g.cooldown_s, max_per_hour=g.max_per_hour)  # fmt: skip
     while True:
         msg = alerts.poll(1.0)
         if msg is None or msg.error():

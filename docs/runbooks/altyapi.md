@@ -100,6 +100,21 @@ curl -s -X POST -H "X-Request-ID: deneme-1" -d '{"a":1}' http://127.0.0.1:8100/a
 - Elle temizlik: `docker compose exec demo-app sh -c 'rm -f /app/var/tmp/junk-*.bin'`.
 - `restart: "no"` bilinçlidir: çöken servisi Remediator kaldırır. Elle kaldırmak için `docker compose --profile demo up -d demo-app`.
 
+## Remediator (otonom aksiyonlar, İz B)
+
+[ADR-0005](../adr/0005-remediator-ayri-servis.md), [ADR-0011](../adr/0011-demo-sistem.md). Profil `demo`. Varsayılan **dry-run**'dır: karar verir ve `actions`'a yazar ama aksiyonu çalıştırmaz.
+
+| İş | Komut (infra/ dizininde) |
+|---|---|
+| Aksiyonları gerçekten çalıştır | `REMEDIATION_DRY_RUN=false docker compose --profile demo up -d remediator` |
+| **Tüm aksiyonları durdur (kill switch)** | `AUTOREMEDIATION_ENABLED=false docker compose --profile demo up -d remediator` |
+| Kararları izle | `docker compose logs -f remediator` (yalnızca aksiyonlu kararlar) ya da `actions` topic'i |
+| Disk temizliğini elle dene | `docker compose exec remediator ansible-playbook -i deeplog-demo-app-1, remediation/playbooks/disk_cleanup.yml` |
+
+- Korumalar: aynı alarm bir kez, hedef başına 5 dk bekleme (`REMEDIATION_COOLDOWN_SEC`), saatte en fazla 6 aksiyon (`REMEDIATION_MAX_PER_HOUR`). EXP-04 koşularını sıklaştırmak için ilk ikisi kısaltılabilir; EXP-05 (K8) varsayılanlarla koşar.
+- Remediator `/health`'i saniyede bir yoklar; 3 ardışık başarısızlık `service_unresponsive` kuralını tetikler.
+- Durum bellektedir; Remediator yeniden başlarsa tekrar engelleme ve bekleme sayaçları sıfırlanır.
+
 ## Çökme davranışı
 
 Uzun çalışan servisler `restart: on-failure` ayarıyla çalışır:

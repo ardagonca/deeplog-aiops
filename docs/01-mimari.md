@@ -157,16 +157,19 @@ Bayt alanları sayaçtır, yani konteyner başladığından beri biriken toplam�
 **`actions`**
 
 ```json
-{"schema_version": 1, "action_id": "uuid", "alert_id": "uuid", "source": "demo-app",
- "fault_type": "disk_full", "action": "ansible:disk_cleanup", "dry_run": false,
- "status": "success", "started_at": "...", "finished_at": "...", "detail": "..."}
+{"schema_version": 1, "action_id": "uuid", "alert_id": "uuid", "source": "demo-client",
+ "target": "demo-app", "fault_type": "disk_full", "action": "ansible:disk_cleanup",
+ "dry_run": false, "status": "success", "alert_time": "...", "started_at": "...",
+ "finished_at": "...", "detail": "1 dosya silindi (/app/var/tmp)"}
 ```
+
+Remediator, sorumlu olduğu kaynakların (`demo-app`, `demo-client`) her alarmı için bir kayıt yazar; aksiyon alınmasa da (koruma, bilinmeyen arıza tipi) yazar. `source` alarmın kaynağı, `target` aksiyonun hedef servisidir. K6 = `finished_at − alert_time` (yalnızca `status = success`, `action ≠ none`). Sözleşme: `ingestion.schemas.ActionEvent`.
 
 Alanların alabileceği değerler:
 
-- `fault_type`: `disk_full`, `service_unresponsive`, `unknown`
+- `fault_type`: `disk_full`, `memory_exhaustion` ([ADR-0011](adr/0011-demo-sistem.md)), `service_unresponsive`, `unknown`
 - `action`: `ansible:disk_cleanup`, `docker:restart`, `none`
-- `status`: `success`, `failed`, `skipped_cooldown`, `skipped_duplicate`, `skipped_not_allowlisted`, `skipped_disabled`
+- `status`: `success`, `failed`, `skipped_unknown` (arıza tipi belirlenemedi), `skipped_duplicate`, `skipped_disabled`, `skipped_not_allowlisted`, `skipped_cooldown`, `skipped_rate_limit` (saatlik üst sınır)
 
 ## 6. HDFS düzeni
 
@@ -202,7 +205,8 @@ Geliştirme makinesinde 32 GB RAM var. WSL2 12 GB bellek ve 6 çekirdekle sını
 | socket-proxy | – | 64 MB |
 | metrics-agent | – | 128 MB |
 | demo-app (profil `demo`; 64 MB tmpfs diski bellek sınırına sayılır) | 8100 | 384 MB |
-| remediator (planlanan, profil `demo`) | – | 256 MB |
+| remediator (profil `demo`) | – | 256 MB |
+| remediation-proxy (profil `demo`; yalnızca iç `remediation` ağında) | – | 64 MB |
 | panel-api (planlanan) | 8001 | 256 MB |
 
 Toplamlar [tests/test_compose.py](../tests/test_compose.py) ile profil bazında denetlenir. Profilsiz (hep açık) servisler 7,2 GB tutar; `hdfs` profiliyle 8,7 GB, `demo` profiliyle 8,7 GB, `jobs` profiliyle 8,2 GB olur. `hdfs` ve `demo` aynı anda açılmaz: ikisi de bir tespit sürücüsü ve bir worker çekirdeği ister.
@@ -220,7 +224,7 @@ Worker 3 çekirdek ve 3 GB executor belleği sunar. Her Spark uygulaması 1 çek
 ## 9. Güvenlik notları
 
 - Metrik ajanı Docker soketini doğrudan görmez. Araya konan `socket-proxy` yalnızca `GET /containers/*` isteklerine izin verir; başlatma, durdurma, yeniden başlatma ve `exec` 403 ile reddedilir (ING-05'te denendi). Ajan konteynerde root olmayan `nobody` kullanıcısıyla çalışır.
-- Remediator Docker soketine erişir; bu, host üzerinde root yetkisine eşdeğerdir. Bu nedenle yalnızca allowlist'teki konteynerlere aksiyon alır ve laboratuvar dışında çalıştırılmaz (risk R-06).
+- Remediator Docker API'ye `remediation-proxy` üzerinden erişir. Bu vekilde yeniden başlatma ve `exec` (Ansible) için POST açıktır; bu, host üzerinde geniş yetki demektir. Bu yüzden vekil yalnızca dışarı çıkışı olmayan iç `remediation` ağındadır ve o ağa yalnızca Remediator bağlıdır; diğer servisler (ör. metrik ajanı) vekilin adını bile çözemez (REM-05'te denendi). Remediator yalnızca allowlist'teki konteynerlere aksiyon alır, Ansible yalnızca `/app/var/tmp`'yi temizler ve sistem laboratuvar dışında çalıştırılmaz (risk R-06).
 - Sırlar (örneğin Slack webhook adresi) `.env` dosyasında tutulur. `.env` git'e girmez; depoya yalnızca `.env.example` konur.
 - Aksiyonlar varsayılan olarak `DRY_RUN=true` modunda çalışır. `AUTOREMEDIATION_ENABLED=false` ayarı tüm aksiyonları anında durdurur (kill switch).
 
