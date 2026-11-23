@@ -77,7 +77,7 @@ Bu dosya projenin backlog'udur (18.11.2026'da resmi takvime göre yeniden planla
 | ID | İş | Kabul kriteri | Sa | Öncelik | Bağımlılık | Sprint |
 |---|---|---|---|---|---|---|
 | REM-01 | Demo hedef sistem: FastAPI uygulaması; logları `logs.raw`'a gönderiyor; `/health` disk doluluğu ve sağlık durumunu dönüyor ([ADR-0011](adr/0011-demo-sistem.md)) | Compose profiliyle ayağa kalkıyor | 6 | Must | INF-05 | ✅ S5 |
-| REM-02 | Arıza enjektörü: disk doldurma (kademeli), bellek sızıntısı (kademeli), süreç öldürme (ani), yanıt vermeme (ani) | Her senaryo tek komutla tetikleniyor; arıza anı (`failure_time`) kaydediliyor | 6 | Must | REM-01 | S5 |
+| REM-02 | Arıza enjektörü: disk doldurma (kademeli), bellek sızıntısı (kademeli), süreç öldürme (ani), yanıt vermeme (ani) | Her senaryo tek komutla tetikleniyor; arıza anı (`failure_time`) kaydediliyor (`demo_target.inject`; ilk deneme: disk 64 sn, sızıntı 88 sn ve OOM, ani senaryolar < 1 sn) | 6 | Must | REM-01 | ✅ S5 |
 | REM-03 | Yük üreteci, normal log toplama ve demo iz için DeepLog eğitimi (`deeplog-demo-v1`) | Normal yükte val setinde FPR ≤ %1 | 8 | Must | REM-01, ML-09 | S5 |
 | REM-04 | Remediator: `alerts` ve `metrics.raw` tüketimi, kurallarla arıza tipi belirleme ([ADR-0005](adr/0005-remediator-ayri-servis.md)) | Kurallar için birim testleri var | 8 | Must | REM-03, RT-03 | S6 |
 | REM-05 | Aksiyonlar: Docker SDK ile restart; Ansible `disk_cleanup` playbook'u (yalnızca izinli dizinler) | Her aksiyon dry-run ve gerçek modda test edildi | 8 | Must | REM-04 | S6 |

@@ -92,6 +92,7 @@ curl -s -X POST -H "X-Request-ID: deneme-1" -d '{"a":1}' http://127.0.0.1:8100/a
 - Loglar `logs.raw`'a `source = demo-app`, `session_key = X-Request-ID` ile gider. `/health` ve `/fault/*` log üretmez.
 - Veri ve geçici dizinler 64 MB'lık tmpfs'tedir (`/app/var`); konteyner silinince içerik de gider.
 - **Arıza uçları** (`FAULTS_ENABLED=true` iken; normalde enjektör kullanır, REM-02): `POST /fault/fill?mb_per_s=1` (disk doldurma), `POST /fault/leak?mb_per_s=4` (bellek sızıntısı), `POST /fault/hang` (yanıt vermeme), `POST /fault/clear` (enjeksiyonu durdurur; çöp dosyaları silmez).
+- **Arıza enjektörü** (REM-02): `uv run python -m demo_target.inject disk|leak|kill|hang [--out kayit.jsonl]`. Önce servisin sağlıklı olduğunu doğrular, arızayı enjekte eder ve sentetik isteğin (probe) ilk başarısız olduğu anı `failure_time` olarak yazar. `kill` için Docker CLI gerekir.
 - Elle temizlik: `docker compose exec demo-app sh -c 'rm -f /app/var/tmp/junk-*.bin'`.
 - `restart: "no"` bilinçlidir: çöken servisi Remediator kaldırır. Elle kaldırmak için `docker compose --profile demo up -d demo-app`.
 

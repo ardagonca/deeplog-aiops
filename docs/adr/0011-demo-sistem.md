@@ -34,7 +34,7 @@
 
 Kademeli senaryolardaki uyarılar, servis arızalanmadan önce gelen sinyaldir. H2 (öngörü süresi > 0) bu sinyallerin DeepLog tarafından arızadan önce yakalanıp yakalanmadığıyla sınanır.
 
-**Güvenli ve gerçek disk:** Uygulamanın veri ve geçici dizinleri 64 MB'lık bir tmpfs üzerindedir. Dolduğunda gerçek ENOSPC hatası oluşur, host diski etkilenmez. tmpfs sayfaları konteynerin bellek sınırına sayıldığı için `mem_limit` 384 MB tutulur. Böylece dolu disk tek başına OOM'a yol açmaz.
+**Güvenli ve gerçek disk:** Uygulamanın veri ve geçici dizinleri 64 MB'lık bir tmpfs üzerindedir. Dolduğunda gerçek ENOSPC hatası oluşur, host diski etkilenmez. tmpfs sayfaları konteynerin bellek sınırına sayıldığı için `mem_limit` 384 MB tutulur. Böylece dolu disk tek başına OOM'a yol açmaz. Swap kapalıdır (`memswap_limit = mem_limit`): açıkken sızıntı OOM yerine yavaşlamaya dönüşüyor, arıza 88 sn yerine 165 sn'de ve süreç ölmeden geliyordu (REM-02 denemesi).
 
 **Sızıntıya karşı:**
 

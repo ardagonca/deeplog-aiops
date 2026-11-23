@@ -311,6 +311,7 @@ services:
       kafka-init:
         condition: service_completed_successfully
     mem_limit: 384m
+    memswap_limit: 384m  # swap yok: sızıntı yavaşlatmak yerine OOM ile süreci öldürür (gerçekçi)
     healthcheck:
       test: ["CMD", "python", "-c",
              "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
