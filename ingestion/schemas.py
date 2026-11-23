@@ -150,6 +150,67 @@ class MetricEvent(_Contract):
             raise ValueError("disk_used_pct: 0-100 aralığında olmalı")
 
 
+@dataclass(frozen=True)
+class AlertEvent(_Contract):
+    """alerts mesajı (RT-03, ADR-0009). İki tür:
+    - deeplog: oturum sürerken gerçek olay ilk g tahminde değil (erken uyarı) ya da oturum
+      kapanırken oturum sonu (EOS) beklenmiyordu;
+    - novelty: oturum kapandı ve olay sayım vektörü normal desenlerde hiç görülmemiş
+      (oturum kararı).
+    event_time, alarmı tetikleyen olayın zamanıdır; K5 = alert_time - event_time."""
+
+    KINDS: ClassVar = ("deeplog", "novelty")
+    TYPES: ClassVar = {
+        "alert_id": (str,),
+        "source": (str,),
+        "session_key": (str,),
+        "kind": (str,),
+        "risk_score": (int, float),
+        "threshold": (int, float),
+        "event_time": (str,),
+        "alert_time": (str,),
+        "model_version": (str,),
+        "event_id": (str, NONE),
+        "schema_version": (int,),
+    }
+    SQL: ClassVar = {
+        "alert_id": "STRING",
+        "source": "STRING",
+        "session_key": "STRING",
+        "kind": "STRING",
+        "risk_score": "DOUBLE",
+        "threshold": "DOUBLE",
+        "event_time": "TIMESTAMP",
+        "alert_time": "TIMESTAMP",
+        "model_version": "STRING",
+        "event_id": "STRING",
+        "schema_version": "INT",
+    }
+
+    alert_id: str
+    source: str
+    session_key: str
+    kind: str
+    risk_score: float  # 0..1; deeplog: gerçek olayın tahmin sırası / sözlük boyu
+    threshold: float  # aynı ölçekte eşik (g / sözlük boyu); novelty için 1
+    event_time: str
+    alert_time: str
+    model_version: str
+    event_id: str | None = None  # tetikleyen olayın şablonu (E5, EOS, UNKNOWN); novelty'de boş
+    schema_version: int = SCHEMA_VERSION
+
+    def _check(self) -> None:
+        if self.kind not in self.KINDS:
+            raise ValueError(f"kind: {self.KINDS} dışında: {self.kind!r}")
+        for name in ("risk_score", "threshold"):
+            if not 0 <= getattr(self, name) <= 1:
+                raise ValueError(f"{name}: 0-1 aralığında olmalı")
+        try:
+            datetime.fromisoformat(self.alert_time.replace("Z", "+00:00"))
+        except ValueError:
+            raise ValueError(f"alert_time: ISO-8601 değil: {self.alert_time!r}") from None
+
+
 def spark_ddl(cls: type[_Contract]) -> str:
     """Spark from_json şeması; alan sırası ve listesi dataclass'tan gelir, iki taraf kopamaz."""
     return ", ".join(f"{f.name} {cls.SQL[f.name]}" for f in fields(cls))
@@ -162,3 +223,4 @@ def required_fields(cls: type[_Contract]) -> list[str]:
 
 LOG_EVENT_DDL = spark_ddl(LogEvent)
 METRIC_EVENT_DDL = spark_ddl(MetricEvent)
+ALERT_EVENT_DDL = spark_ddl(AlertEvent)
