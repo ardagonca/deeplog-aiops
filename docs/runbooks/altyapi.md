@@ -98,6 +98,7 @@ docker inspect deeplog-<servis>-1 --format '{{.RestartCount}}'
 
 | Belirti | Neden | Çözüm |
 |---|---|---|
+| `spark-ingest` sürekli yeniden başlıyor; günlükte "Some data may have been lost because they are not available in Kafka any more" | Yığın 24 saatten uzun kapalı kaldı; tüketilmemiş kayıtlar Kafka'nın saklama süresi dolunca silindi | Metrik akışı bu durumda uyarıyla devam eder (`failOnDataLoss=false`). Durursa log akışıdır (risk R-14): kayıp aralığı `verify_ingest` ile raporla, sonra karar ver. Önlem: yığını kapatmadan önce ingest'in birikimi bitirmesini bekle |
 | NameNode `healthy` olmuyor | Volume izinleri | `docker compose up hdfs-volume-init` çıktısına bak |
 | `spark-job` HDFS'e yazamıyor, `Connection refused` | DataNode henüz kayıt olmamış | `docker compose exec namenode hdfs dfsadmin -report` ile canlı DataNode sayısına bak |
 | Executor'lar sürücüye bağlanamıyor | `spark.driver.host` yanlış | `spark-job` servisinin entrypoint'i IP'yi `hostname -i` ile verir; servis tanımı değiştiyse kontrol et |
