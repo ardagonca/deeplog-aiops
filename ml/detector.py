@@ -6,8 +6,12 @@ Kurallar:
 - Oturum timeout_s boyunca olay almazsa kapanır. Oturum sonu (EOS) beklenmiyorsa ve daha önce
   deeplog alarmı verilmemişse deeplog alarmı; sayım vektörü görülmemişse novelty alarmı.
 - alert_id (model, tür, oturum)'dan türetilir: aynı batch yeniden işlenirse aynı kimlik üretilir.
+- Durum dump()/restore() ile kalıcıdır (RT-08); last_batch, anlık görüntünün hangi micro-batch'e
+  kadar işlendiğini tutar ve yeniden oynatılan batch'lerin ikinci kez işlenmesini önler.
 """
 
+import gzip
+import json
 import uuid
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
@@ -30,9 +34,8 @@ class Detector:
     def __init__(self, pkg: ModelPackage, matcher: Callable[[str], str | None], timeout_s: float):
         self.pkg, self.matcher, self.timeout_s = pkg, matcher, timeout_s
         self.code = {e: i for i, e in enumerate(pkg.config.vocab)}
-        # shortcut: durum bellekte; iş yeniden başlarsa açık oturumlar sıfırdan başlar (ilk
-        # olaylarda yanlış alarm olabilir). Kalıcı duruma M4 öncesi geçilecek (backlog RT-08).
         self.open: dict[str, _Open] = {}
+        self.last_batch = -1  # durumun içerdiği son micro-batch kimliği
 
     def process(
         self, events: Iterable[tuple[str, str, str, str]], now: float, alert_time: str
@@ -77,6 +80,27 @@ class Detector:
             if novel:
                 alerts.append(self._alert(key, o, "novelty", None, o.last_time, None, alert_time))
         return alerts
+
+    def dump(self) -> bytes:
+        """Açık oturumların anlık görüntüsü (gzip'li JSON; pickle değil: dosya dışarıdan okunur)."""
+        rows = [
+            [k, o.source, o.last_time, o.session.history, o.session.counts, o.session.alerted]
+            for k, o in self.open.items()
+        ]
+        doc = {"version": 1, "model": self.pkg.config.name, "batch": self.last_batch, "open": rows}
+        return gzip.compress(json.dumps(doc, separators=(",", ":")).encode(), compresslevel=1)
+
+    def restore(self, data: bytes, now: float) -> None:
+        """dump() çıktısını yükler. Kesinti süresi oturumların aleyhine sayılmasın diye zaman aşımı
+        sayacı now'dan yeniden başlar."""
+        doc = json.loads(gzip.decompress(data))
+        if doc["version"] != 1 or doc["model"] != self.pkg.config.name:
+            raise ValueError(f"durum başka bir model/sürüme ait: {doc['model']} v{doc['version']}")
+        self.last_batch = doc["batch"]
+        self.open = {
+            k: _Open(Session(history, counts, alerted), source, last_time, now)
+            for k, source, last_time, history, counts, alerted in doc["open"]
+        }
 
     def _alert(self, key, o: _Open, kind, rank, event_time, event_id, alert_time) -> AlertEvent:
         cfg = self.pkg.config

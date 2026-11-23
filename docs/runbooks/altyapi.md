@@ -74,9 +74,9 @@ Depo kökü konteynerin `/opt/deeplog` dizinine salt okunur olarak bağlanır ve
 | `DETECT_SESSION_TIMEOUT_SEC` | `120` | Bu süre olay almayan oturum kapanır ve son kararı (EOS, sayım yeniliği) verilir |
 
 - **Alarmları izlemek:** `docker compose exec kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic alerts`
-- **Model sürümünü değiştirmek:** Yeni paket `jobs/publish_model.py` ile HDFS'e yazılır (sürümler değişmez, üzerine yazılmaz). Ardından `infra/` dizininde `DETECT_MODEL=<yeni> docker compose up -d spark-detect` çalıştırılır (değişken `.env` dosyasına da yazılabilir). Çalışırken model değiştirme yoktur.
-- **Kod değişikliği:** Depo kökü bu servise bağlı olduğu için `docker compose restart spark-detect` yeterlidir. Job `latest` offset'ten başlar ve checkpoint'ten devam eder; açık oturumların durumu bellekte olduğundan yeniden başlatmada kaybolur (RT-08).
-- **Checkpoint'i sıfırlamak:** `docker compose stop spark-detect`, ardından `docker compose exec namenode hdfs dfs -rm -r -f /checkpoints/detect` ve `docker compose up -d spark-detect`.
+- **Model sürümünü değiştirmek:** Yeni paket `jobs/publish_model.py` ile HDFS'e yazılır (sürümler değişmez, üzerine yazılmaz). Eski modelin oturum durumu yeni modelle kullanılamaz: önce checkpoint sıfırlanır (aşağıda). Ardından `infra/` dizininde `DETECT_MODEL=<yeni> docker compose up -d spark-detect` çalıştırılır (değişken `.env` dosyasına da yazılabilir). Çalışırken model değiştirme yoktur.
+- **Kod değişikliği:** Depo kökü bu servise bağlı olduğu için `docker compose restart spark-detect` yeterlidir. İlk çalıştırmada `latest` offset'ten başlar; sonraki başlatmalarda checkpoint'teki offset'ten devam eder. Açık oturumların durumu her batch'ten sonra `/checkpoints/detect/detector_state/` altına yazılır ve başlarken yüklenir (RT-08; günlükte `durum yüklendi: batch N, M açık oturum`). Durum başka bir model sürümüne aitse iş başlamaz; model değiştirirken checkpoint sıfırlanmalıdır.
+- **Checkpoint'i sıfırlamak:** `docker compose stop spark-detect`, ardından `docker compose exec namenode hdfs dfs -rm -r -f /checkpoints/detect` ve `docker compose up -d spark-detect`. Oturum durumu checkpoint'in içinde olduğu için onunla birlikte silinir; ikisi ayrı ayrı silinmemelidir.
 - **Gecikme ve tutarlılık ölçümü:** `uv run --group ml python -m ml.exp03` (EXP-03). Önce yığın açık ve model paketi `data/models/<ad>` altında yerelde de bulunmalıdır.
 
 ## Çökme davranışı

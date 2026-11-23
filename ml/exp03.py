@@ -4,17 +4,22 @@ Kullanım: uv run python -m ml.exp03 [--sessions 20000] [--rate 5000]
 Önce: altyapı açık (spark-detect dahil) ve model paketi data/models/<model> yerelde de var.
 1. Test bölmesinden --sessions oturum seçilir (sabit tohum) ve satırları EKSİKSİZ, orijinal sırayla
    --rate hızında oynatılır (replayer --blocks); dosya başını oynatmak oturumları keserdi.
-2. Oturumların zaman aşımıyla kapanması beklenir; alerts topic'i okunur (yalnızca bu koşunun
-   kaynağı).
+2. alerts topic'i, bu koşunun kaynağından --wait sn boyunca yeni alarm gelmeyene kadar okunur
+   (oturumların zaman aşımıyla kapanması dahil; sabit bekleme yeniden başlatmada yetmiyordu).
 3. Raporlanan: erken DeepLog alarmlarının gecikmesi (alert_time - event_time), canlı kararların
    P/R/F1'i ve aynı oturumlarda offline kararla uyum oranı (RT-05).
 Çıktı: experiments/EXP-03/<tarih>/{blocks.txt, results.json, ozet.md}.
+
+--restart-after N: oynatma başladıktan N sn sonra spark-detect yeniden başlatılır (RT-08 sınaması:
+durum korunuyorsa kararlar yine offline ile aynı olmalı; kesinti süresince gecikme doğal olarak
+artar).
 """
 
 import argparse
 import json
 import subprocess
 import sys
+import threading
 import time
 import uuid
 from datetime import datetime
@@ -50,10 +55,10 @@ def read_alerts(source: str, idle_s: float = 15) -> list[AlertEvent]:
         msg = consumer.poll(1.0)
         if msg is None or msg.error():
             continue
-        last = time.monotonic()
         alert = AlertEvent.from_json(msg.value())
-        if alert.source == source:
+        if alert.source == source:  # başka koşuların alarmları bekleme süresini uzatmasın
             alerts.append(alert)
+            last = time.monotonic()
     consumer.close()
     return alerts
 
@@ -69,28 +74,42 @@ def main() -> int:
     parser.add_argument("--sessions", type=int, default=20_000)
     parser.add_argument("--rate", type=int, default=5000)
     parser.add_argument("--model", default="hdfs-v1")
-    parser.add_argument("--wait", type=int, default=200, help="oturum zaman aşımı + pay (sn)")
+    parser.add_argument(
+        "--wait",
+        type=int,
+        default=180,
+        help="bu kadar sn yeni alarm gelmezse bitti say (> zaman aşımı)",
+    )
+    parser.add_argument(
+        "--restart-after", type=float, help="spark-detect'i bu kadar sn sonra yeniden başlat"
+    )
     args = parser.parse_args()
 
     ds, pkg = dataset.load(), load(ROOT / "data" / "models" / args.model)
     rng = np.random.default_rng(0)
     idx = np.sort(rng.choice(ds.indices("test"), size=args.sessions, replace=False))
-    out = ROOT / "experiments" / "EXP-03" / datetime.now().strftime("%Y-%m-%d_%H%M")
+    stamp = datetime.now().strftime("%Y-%m-%d_%H%M")
+    out = ROOT / "experiments" / "EXP-03" / (stamp + ("-restart" if args.restart_after else ""))
     out.mkdir(parents=True, exist_ok=True)
     (out / "blocks.txt").write_text("\n".join(ds.blocks[idx]) + "\n", encoding="utf-8")
     source = f"exp03-{int(time.time())}"
 
     print(f"{args.sessions:,} oturum oynatılıyor ({source}, {args.rate} log/sn)", flush=True)
+    if args.restart_after:
+        restart = ["docker", "compose", "restart", "spark-detect"]
+        threading.Timer(
+            args.restart_after, subprocess.run, [restart], {"cwd": ROOT / "infra", "check": True}
+        ).start()
     subprocess.run(
         [sys.executable, "-m", "ingestion.replayer", "--rate", str(args.rate), "--source", source,
          "--blocks", str(out / "blocks.txt")],
         check=True, cwd=ROOT,
     )  # fmt: skip
-    print(f"oturumların kapanması bekleniyor ({args.wait} sn)", flush=True)
-    time.sleep(args.wait)
+    print(f"alarmlar okunuyor ({args.wait} sn sessizliğe kadar)", flush=True)
     wanted = {b: i for i, b in enumerate(ds.blocks[idx])}
     # çok bloklu satırlar seçilmemiş bloklara da oturum açar; onların alarmları sayılmaz
-    alerts = [a for a in read_alerts(source) if a.session_key in wanted]
+    alerts = [a for a in read_alerts(source, args.wait) if a.session_key in wanted]
+    duplicates = len(alerts) - len({a.alert_id for a in alerts})  # en az bir kez yazımın tekrarları
 
     # Canlı kararlar (oturum bazında) ve aynı oturumlarda offline kararlar
     live_dl = np.zeros(len(idx), bool)
@@ -111,7 +130,9 @@ def main() -> int:
         "sessions": args.sessions,
         "anomalous": int(y.sum()),
         "rate": args.rate,
+        "restart_after_s": args.restart_after,
         "alerts": len(alerts),
+        "duplicate_alerts": duplicates,
         "early_latency_s": {
             "n": len(early),
             "p50": pct(0.5),
@@ -136,9 +157,23 @@ def main() -> int:
         "`ml.exp03` üretir; elle düzenlenmez.",
         "",
         f"- Test bölmesinden {args.sessions:,} oturum ({int(y.sum()):,} anormal) eksiksiz olarak "
-        f"{args.rate:,} log/sn ile oynatıldı; {len(alerts):,} alarm üretildi.",
-        f"- **K5** (erken DeepLog alarmı gecikmesi p95 ≤ {K5_P95:.0f} sn): "
-        f"**{ok[lat['p95'] <= K5_P95]}** (p50 {lat['p50']:.1f} sn, p95 {lat['p95']:.1f} sn, "
+        f"{args.rate:,} log/sn ile oynatıldı; {len(alerts):,} alarm üretildi "
+        f"(aynı alert_id ile tekrar: {duplicates}).",
+        *(
+            [
+                f"- Oynatma başladıktan {args.restart_after:.0f} sn sonra spark-detect yeniden "
+                "başlatıldı (RT-08); kesinti süresindeki alarmların gecikmesi bu yüzden yüksektir."
+            ]
+            if args.restart_after
+            else []
+        ),  # fmt: skip
+        (
+            "- Erken DeepLog alarmı gecikmesi (kesinti dahil; K5 ölçümü değildir): "
+            if args.restart_after
+            else f"- **K5** (erken DeepLog alarmı gecikmesi p95 ≤ {K5_P95:.0f} sn): "
+            f"**{ok[lat['p95'] <= K5_P95]}** "
+        )
+        + f"(p50 {lat['p50']:.1f} sn, p95 {lat['p95']:.1f} sn, "
         f"max {lat['max']:.1f} sn, n = {lat['n']:,})",
         "",
         "| Karar | Canlı P / R / F1 | Offline P / R / F1 | Canlı = offline (oturum oranı) |",

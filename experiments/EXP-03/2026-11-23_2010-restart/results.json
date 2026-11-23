@@ -1,0 +1,59 @@
+{
+  "source": "exp03-1795453826",
+  "sessions": 20000,
+  "anomalous": 432,
+  "rate": 5000,
+  "restart_after_s": 30.0,
+  "alerts": 902,
+  "duplicate_alerts": 0,
+  "early_latency_s": {
+    "n": 372,
+    "p50": 10.462,
+    "p95": 25.924,
+    "max": 30.377
+  },
+  "live": {
+    "deeplog": {
+      "precision": 0.7697368421052632,
+      "recall": 0.8125,
+      "f1": 0.7905405405405405,
+      "tp": 351,
+      "fp": 105,
+      "tn": 19463,
+      "fn": 81
+    },
+    "novelty": {
+      "precision": 0.968609865470852,
+      "recall": 1.0,
+      "f1": 0.9840546697038723,
+      "tp": 432,
+      "fp": 14,
+      "tn": 19554,
+      "fn": 0
+    }
+  },
+  "offline": {
+    "deeplog": {
+      "precision": 0.7697368421052632,
+      "recall": 0.8125,
+      "f1": 0.7905405405405405,
+      "tp": 351,
+      "fp": 105,
+      "tn": 19463,
+      "fn": 81
+    },
+    "novelty": {
+      "precision": 0.968609865470852,
+      "recall": 1.0,
+      "f1": 0.9840546697038723,
+      "tp": 432,
+      "fp": 14,
+      "tn": 19554,
+      "fn": 0
+    }
+  },
+  "agreement": {
+    "deeplog": 1.0,
+    "novelty": 1.0
+  }
+}

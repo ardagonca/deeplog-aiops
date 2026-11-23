@@ -26,7 +26,7 @@ Risk R-03'ün B planı skorlamayı Spark dışına (düz Kafka consumer) taşım
 - Artı: Aynı makinede ölçülen hız ~**9.500 log/sn**'ye çıktı (yaklaşık 8,6 kat). Spark Structured Streaming kullanımı sürüyor; öneriyle çelişki yok.
 - Artı: Durum şemasına bağlı checkpoint uyumsuzluğu ortadan kalktı. Karar mantığı Spark olmadan test edilebiliyor.
 - Eksi: Skorlama tek süreçte, sürücüde yapılır; yatay ölçekleme yoktur. Tek düğümlü geliştirme ortamında bunun pratik bir kaybı yoktur. Gerekirse oturum anahtarına göre bölünmüş birden çok tespit job'u çalıştırılabilir.
-- Eksi: Durum bellekte olduğundan job yeniden başlarsa açık oturumlar sıfırdan başlar. Oturumun ilk olayları bağlamsız değerlendirildiği için yanlış alarm çıkabilir. Kalıcı duruma geçiş RT-08 olarak backlog'dadır (M4 öncesi).
+- Eksi: Durum bellekte olduğundan job yeniden başlarsa açık oturumlar sıfırdan başlar. Oturumun ilk olayları bağlamsız değerlendirildiği için yanlış alarm çıkabilir. Kalıcı duruma geçiş RT-08 olarak backlog'dadır (M4 öncesi). *Güncelleme (23.11.2026): RT-08 ile giderildi; durum her batch'ten sonra checkpoint dizinine yazılıyor, yeniden oynatılan batch'ler atlanıyor. Aynı çalışmada alarm yayını Spark işi yerine sürücüdeki Kafka Java istemcisine alındı (batch başına 0,3–9 sn'lik ek iş kalktı).*
 - Takip: Sürücü belleği 1,5 GB'a çıkarıldı (Mimari §7). Gecikme ve canlı/offline uyumu EXP-03'te ölçülür.
 
 ## Değerlendirilen alternatifler

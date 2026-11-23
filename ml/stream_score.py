@@ -1,5 +1,5 @@
 """RT-02/03: Canlı akışta oturum bazında skorlama (ADR-0009). Spark'a bağlı değildir; tespit
-işi (jobs/detect.py) bunu applyInPandasWithState içinde çağırır.
+işi (jobs/detect.py) bunu ml.detector üzerinden, her micro-batch için toplu çağırır (ADR-0010).
 
 Bir oturumun olayları hangi parçalara bölünerek gelirse gelsin sonuç, offline değerlendirmeyle
 (ml.deeplog.session_max_rank + ml.novelty) aynıdır: aynı başlangıç dolgusu, aynı pencereler,
