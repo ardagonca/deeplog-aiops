@@ -106,6 +106,8 @@ Bu akıştaki zaman damgalarından iki KPI hesaplanır: K5 = t1 − t0 ve K6 = t
 | `alerts` | Tespit job | Remediator, Panel API | `source` | 1 | 7 gün |
 | `actions` | Remediator | Ingest, Panel API | `source` | 1 | 7 gün |
 
+Saklama süresi dolup silinmiş offset'lerde ingest akışları farklı davranır: `logs.raw` (ana veri, K2) durur ve elle karar bekler; `metrics.raw` (telemetri) uyarıyla en eski mevcut offset'ten devam eder (risk R-14).
+
 `logs.raw` topic'inin anahtarı `session_key`'dir. Bunun iki nedeni var: Bir oturumun olayları aynı bölüme düşer ve sırası korunur, ki DeepLog dizi modeli bu sıraya dayanır. Ayrıca HDFS_v1'deki 575 bin oturum üç bölüme dengeli dağılır. `source` anahtar olsaydı tüm HDFS logları tek bölüme giderdi (ING-03'te ölçülen dağılım: 99.567 / 98.533 / 101.900).
 
 ## 5. Veri sözleşmeleri
