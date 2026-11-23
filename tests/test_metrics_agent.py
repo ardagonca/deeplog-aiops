@@ -84,3 +84,26 @@ def test_to_metric_handles_cgroup_v1_and_missing_sections():
     event = to_metric("hdfs-init", "Up 1 second", stats, None, NOW)
     assert (event.blk_read_bytes, event.blk_write_bytes, event.net_rx_bytes) == (7, 0, 0)
     assert (event.mem_bytes, event.mem_limit_bytes, event.healthy) == (0, 0, None)
+
+
+def test_disk_from_health_reads_valid_value_only(monkeypatch):
+    import io
+    import json as _json
+
+    from ingestion import metrics_agent
+
+    def fake(body):
+        return lambda url, timeout: io.BytesIO(_json.dumps(body).encode())
+
+    monkeypatch.setattr(metrics_agent.urllib.request, "urlopen", fake({"disk_used_pct": 91.5}))
+    assert metrics_agent.disk_from_health("http://x/health") == 91.5
+    monkeypatch.setattr(metrics_agent.urllib.request, "urlopen", fake({"disk_used_pct": 140}))
+    assert metrics_agent.disk_from_health("http://x/health") is None
+
+    def down(url, timeout):
+        raise TimeoutError("yanıt yok")
+
+    monkeypatch.setattr(metrics_agent.urllib.request, "urlopen", down)
+    assert metrics_agent.disk_from_health("http://x/health") is None
+    event = to_metric("demo-app", "Up 1 minute", STATS, None, NOW, 91.5)
+    assert MetricEvent.from_json(event.to_json()).disk_used_pct == 91.5

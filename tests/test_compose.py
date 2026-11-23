@@ -27,10 +27,19 @@ def test_every_service_has_mem_limit():
     assert not missing, f"mem_limit eksik: {missing}"
 
 
+def _profiles(svc: dict) -> set[str]:
+    return set(svc.get("profiles", []))
+
+
 def test_services_running_together_fit_ram_budget():
-    # -init servisleri açılışta çalışıp çıkar; -job (Spark sürücüsü) diğerleriyle birlikte çalışır.
-    total = sum(_gb(s["mem_limit"]) for n, s in _services().items() if not n.endswith("-init"))
-    assert total <= RAM_BUDGET_GB, f"Toplam {total:.1f} GB > {RAM_BUDGET_GB} GB bütçe"
+    # -init servisleri açılışta çalışıp çıkar. Profilsiz servisler hep açıktır; her profil
+    # (jobs: Spark sürücüsü, demo: İz B) onların yanında açılır.
+    services = {n: s for n, s in _services().items() if not n.endswith("-init")}
+    base = [s for s in services.values() if not _profiles(s)]
+    for profile in sorted(set().union(*map(_profiles, services.values()))):
+        running = base + [s for s in services.values() if profile in _profiles(s)]
+        total = sum(_gb(s["mem_limit"]) for s in running)
+        assert total <= RAM_BUDGET_GB, f"{profile}: toplam {total:.1f} GB > {RAM_BUDGET_GB} GB"
 
 
 def test_long_running_services_have_healthcheck():
@@ -40,8 +49,14 @@ def test_long_running_services_have_healthcheck():
             assert "healthcheck" in svc, f"{name}: healthcheck yok"
 
 
+# Bilerek yeniden başlatılmayan servisler: çökeni Remediator kaldırmalı (ADR-0011, K7).
+NO_RESTART = {"demo-app"}
+
+
 def test_long_running_services_restart_on_crash():
     # infra/failure_test.sh T1 senaryosu bu politikaya dayanır.
     for name, svc in _services().items():
-        if not name.endswith(("-init", "-job")):
+        if name in NO_RESTART:
+            assert svc.get("restart") == "no", f"{name}: restart: no olmalı"
+        elif not name.endswith(("-init", "-job")):
             assert svc.get("restart") == "on-failure", f"{name}: restart: on-failure yok"

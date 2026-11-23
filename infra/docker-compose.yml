@@ -241,7 +241,8 @@ services:
     init: true
     restart: on-failure
     command: ["python", "-m", "ingestion.metrics_agent",
-              "--docker", "http://socket-proxy:2375", "--bootstrap", "kafka:29092", "--interval", "5"]
+              "--docker", "http://socket-proxy:2375", "--bootstrap", "kafka:29092", "--interval", "5",
+              "--health", "demo-app=http://demo-app:8000/health"]
     volumes:
       - ..:/opt/deeplog:ro
     depends_on:
@@ -285,6 +286,38 @@ services:
       timeout: 5s
       retries: 12
       start_period: 60s
+
+  # REM-01: demo hedef sistem (ADR-0011). docker compose --profile demo up -d demo-app
+  demo-app:
+    image: deeplog-demo:1
+    build: images/demo
+    profiles: ["demo"]
+    hostname: demo-app
+    init: true
+    restart: "no"  # çöken servisi Docker değil Remediator kaldırmalı (K7)
+    command: ["python", "-m", "uvicorn", "demo_target.app:app", "--host", "0.0.0.0", "--port", "8000",
+              "--no-access-log"]
+    environment:
+      KAFKA_BOOTSTRAP: kafka:29092
+      DEMO_VAR_DIR: /app/var
+      FAULTS_ENABLED: ${DEMO_FAULTS_ENABLED:-true}
+    volumes:
+      - ..:/opt/deeplog:ro
+    tmpfs:  # gerçek ENOSPC, host diski güvende; tmpfs bellek sınırına sayılır (mem_limit buna göre)
+      - /app/var:size=64m,uid=65534,gid=65534,mode=0755
+    ports:
+      - "127.0.0.1:${DEMO_PORT:-8100}:8000"  # 8000 host'ta sık kullanılıyor
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    mem_limit: 384m
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   # İş göndermek için: docker compose --profile jobs run --rm spark-job /opt/deeplog/jobs/<betik>.py
   spark-job:

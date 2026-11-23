@@ -4,6 +4,8 @@ Docker API'ye yalnızca okuma izni olan socket proxy üzerinden erişir (docs/01
 ajan hiçbir konteyneri başlatamaz, durduramaz, içinde komut çalıştıramaz.
 Compose'taki metrics-agent servisi çalıştırır:
   python -m ingestion.metrics_agent --docker http://socket-proxy:2375 --bootstrap kafka:29092
+--health servis=url: o servisin /health çıktısındaki disk_used_pct ölçüme eklenir (REM-01; Docker
+API konteyner içi disk doluluğunu vermez). Yanıt gelmezse alan boş kalır.
 """
 
 import argparse
@@ -47,7 +49,24 @@ def cpu_pct(prev: dict | None, cur: dict) -> float | None:
     return round(used / total * cur.get("online_cpus", 1) * 100, 2)
 
 
-def to_metric(service: str, status: str, stats: dict, prev_cpu: dict | None, now: datetime):
+def disk_from_health(url: str, timeout: float = 2.0) -> float | None:
+    """Servisin /health JSON'undaki disk_used_pct; ulaşılamazsa ya da alan yoksa None."""
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as response:
+            value = json.load(response).get("disk_used_pct")
+    except (OSError, ValueError, AttributeError):  # yanıt vermeme senaryosunda zaman aşımı
+        return None
+    return float(value) if isinstance(value, (int, float)) and 0 <= value <= 100 else None
+
+
+def to_metric(
+    service: str,
+    status: str,
+    stats: dict,
+    prev_cpu: dict | None,
+    now: datetime,
+    disk_used_pct: float | None = None,
+):
     memory = stats.get("memory_stats") or {}
     page_cache = (memory.get("stats") or {}).get("inactive_file", 0)
     blkio = (stats.get("blkio_stats") or {}).get("io_service_bytes_recursive") or []
@@ -69,6 +88,7 @@ def to_metric(service: str, status: str, stats: dict, prev_cpu: dict | None, now
         net_tx_bytes=sum(n["tx_bytes"] for n in networks),
         cpu_pct=cpu_pct(prev_cpu, stats["cpu_stats"]),
         healthy=health(status),
+        disk_used_pct=disk_used_pct,
     )
 
 
@@ -80,7 +100,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--bootstrap", default="kafka:29092")
     parser.add_argument("--topic", default="metrics.raw")
     parser.add_argument("--interval", type=float, default=5.0, help="saniye")
+    parser.add_argument("--health", action="append", default=[], metavar="SERVİS=URL")
     args = parser.parse_args(argv)
+    try:
+        health_urls = dict(item.split("=", 1) for item in args.health)
+    except ValueError:
+        parser.error("--health servis=url biçiminde olmalı")
 
     def get_json(path: str):
         with urllib.request.urlopen(args.docker + path, timeout=10) as response:
@@ -121,7 +146,14 @@ def main(argv: list[str] | None = None) -> int:
                     service = c["Labels"].get("com.docker.compose.service", c["Names"][0])
                     try:
                         stats = get_json(f"/containers/{c['Id']}/stats?stream=false&one-shot=true")
-                        event = to_metric(service, c["Status"], stats, previous.get(c["Id"]), now)
+                        disk = (
+                            disk_from_health(health_urls[service])
+                            if service in health_urls
+                            else None
+                        )
+                        event = to_metric(
+                            service, c["Status"], stats, previous.get(c["Id"]), now, disk
+                        )
                     except (OSError, ValueError, KeyError) as e:  # bu arada kapanmış olabilir
                         log("WARN", "ölçüm atlandı", service=service, error=str(e))
                         continue

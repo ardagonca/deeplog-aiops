@@ -79,6 +79,22 @@ Depo kökü konteynerin `/opt/deeplog` dizinine salt okunur olarak bağlanır ve
 - **Checkpoint'i sıfırlamak:** `docker compose stop spark-detect`, ardından `docker compose exec namenode hdfs dfs -rm -r -f /checkpoints/detect` ve `docker compose up -d spark-detect`. Oturum durumu checkpoint'in içinde olduğu için onunla birlikte silinir; ikisi ayrı ayrı silinmemelidir.
 - **Gecikme ve tutarlılık ölçümü:** `uv run --group ml python -m ml.exp03` (EXP-03). Önce yığın açık ve model paketi `data/models/<ad>` altında yerelde de bulunmalıdır.
 
+## Demo hedef sistem (`demo-app`, İz B)
+
+[ADR-0011](../adr/0011-demo-sistem.md). Profil `demo` ile açılır; adres http://127.0.0.1:8100 (`DEMO_PORT` ile değişir).
+
+```bash
+docker compose --profile demo up -d --wait demo-app
+curl -s http://127.0.0.1:8100/health          # status, disk_used_pct, mem_bytes, mem_limit_bytes
+curl -s -X POST -H "X-Request-ID: deneme-1" -d '{"a":1}' http://127.0.0.1:8100/api/orders/5
+```
+
+- Loglar `logs.raw`'a `source = demo-app`, `session_key = X-Request-ID` ile gider. `/health` ve `/fault/*` log üretmez.
+- Veri ve geçici dizinler 64 MB'lık tmpfs'tedir (`/app/var`); konteyner silinince içerik de gider.
+- **Arıza uçları** (`FAULTS_ENABLED=true` iken; normalde enjektör kullanır, REM-02): `POST /fault/fill?mb_per_s=1` (disk doldurma), `POST /fault/leak?mb_per_s=4` (bellek sızıntısı), `POST /fault/hang` (yanıt vermeme), `POST /fault/clear` (enjeksiyonu durdurur; çöp dosyaları silmez).
+- Elle temizlik: `docker compose exec demo-app sh -c 'rm -f /app/var/tmp/junk-*.bin'`.
+- `restart: "no"` bilinçlidir: çöken servisi Remediator kaldırır. Elle kaldırmak için `docker compose --profile demo up -d demo-app`.
+
 ## Çökme davranışı
 
 Uzun çalışan servisler `restart: on-failure` ayarıyla çalışır:
