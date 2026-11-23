@@ -6,7 +6,9 @@ Bütün komutlar `infra/` dizininde çalıştırılır. Git Bash kullanılıyors
 
 | İş | Komut |
 |---|---|
-| Hepsini başlat ve sağlıklı olmalarını bekle | `docker compose up -d --wait` |
+| Çekirdeği başlat ve sağlıklı olmalarını bekle | `docker compose up -d --wait` (Kafka, HDFS, Spark, ingest, metrik ajanı) |
+| İz A'yı (HDFS_v1 tespiti) aç | `docker compose --profile hdfs up -d --wait` |
+| İz B'yi (demo sistem) aç | `docker compose stop spark-detect` (açıksa), ardından `docker compose --profile demo up -d --wait` |
 | Durumu gör | `docker compose ps -a` |
 | Durdur (veri kalır) | `docker compose down` |
 | Uçtan uca doğrula | `bash smoke_test.sh` (yaklaşık 1 dakika) |
@@ -16,6 +18,8 @@ Bütün komutlar `infra/` dizininde çalıştırılır. Git Bash kullanılıyors
 | EXP-01 deneyi (K1, K2) | Depo kökünde `bash experiments/EXP-01/run.sh` (yaklaşık 2,5–3 saat; 12 koşu). Kısa deneme için: `bash experiments/EXP-01/run.sh "2000" 1 150`. Sonuç `experiments/EXP-01/<tarih>/ozet.md` dosyasına yazılır |
 | Arıza testleri | `bash failure_test.sh` (yaklaşık 8 dakika; servisleri bilerek çökertir, çalışan işler varken çalıştırma) |
 | Bir servisin loglarını izle | `docker compose logs -f <servis>` |
+
+**Profiller** bellek bütçesi için ayrıdır (Mimari §7): `hdfs` (İz A tespiti), `demo` (demo sistem, yük üreteci, İz B tespiti), `jobs` (tek seferlik Spark işleri). `hdfs` ve `demo` aynı anda açılmaz.
 
 Tek seferlik servisler (`kafka-init`, `hdfs-volume-init`, `hdfs-init`) her açılışta çalışıp `Exited (0)` durumunda kalır; bu normaldir. Bu servislerin işi var olan veriye dokunmadan eksik topic'leri ve dizinleri oluşturmaktır.
 
@@ -65,7 +69,7 @@ Depo kökü konteynerin `/opt/deeplog` dizinine salt okunur olarak bağlanır ve
 
 ## Tespit job'u (`spark-detect`)
 
-`spark-detect`, `logs.raw`'ı okuyup `alerts` topic'ine alarm yazar ([ADR-0009](../adr/0009-hibrit-tespit.md), [ADR-0010](../adr/0010-tespit-foreachbatch.md)). Arayüzü http://127.0.0.1:4041 adresindedir.
+`spark-detect`, `logs.raw`'ı okuyup `alerts` topic'ine alarm yazar ([ADR-0009](../adr/0009-hibrit-tespit.md), [ADR-0010](../adr/0010-tespit-foreachbatch.md)). Arayüzü http://127.0.0.1:4041 adresindedir. Profil `hdfs`; bu bölümdeki `docker compose` komutlarına `--profile hdfs` eklenir. İz B'nin eşi `spark-detect-demo`dur (profil `demo`, arayüz 4042, checkpoint `/checkpoints/detect-demo`, model `deeplog-demo-v1`, kaynak `^demo-`, oturum zaman aşımı 10 sn).
 
 | Ortam değişkeni | Varsayılan | Anlamı |
 |---|---|---|

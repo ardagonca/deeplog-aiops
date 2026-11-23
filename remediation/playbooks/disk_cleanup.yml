@@ -1,0 +1,23 @@
+# REM-05: ansible:disk_cleanup (ADR-0005). Hedef konteynerde yalnızca izinli geçici dizini temizler.
+# Remediator çalıştırır: ansible-playbook -i <konteyner>, disk_cleanup.yml
+# Bağlantı Docker API üzerinden (community.docker.docker_api); DOCKER_HOST ortam değişkeni
+# yalnızca Remediator'ın ağındaki vekili gösterir. Tek komut, tek docker exec: dosya başına
+# modül çağrısı onlarca saniye sürer (K6 <= 30 sn).
+- name: disk_cleanup
+  hosts: all
+  gather_facts: false
+  vars:
+    ansible_connection: community.docker.docker_api
+    ansible_python_interpreter: /usr/local/bin/python3
+    ansible_remote_tmp: /tmp/.ansible  # hedef kullanıcı nobody'nin ev dizini yok
+    allowed_dir: /app/var/tmp
+  tasks:
+    - name: İzinli dizindeki geçici dosyaları sil
+      ansible.builtin.command:
+        argv: [find, "{{ allowed_dir }}", -maxdepth, "1", -type, f,
+               "(", -name, "junk-*.bin", -o, -name, "*.tmp", ")", -print, -delete]
+      register: deleted
+      changed_when: deleted.stdout_lines | length > 0
+    - name: Özet
+      ansible.builtin.debug:
+        msg: "{{ deleted.stdout_lines | length }} dosya silindi ({{ allowed_dir }})"

@@ -1,7 +1,8 @@
-"""Kafka mesaj sözleşmeleri (docs/01-mimari.md §5): logs.raw (ING-02) ve metrics.raw (ING-05).
+"""Kafka mesaj sözleşmeleri (docs/01-mimari.md §5): logs.raw (ING-02), metrics.raw (ING-05),
+alerts (RT-03) ve actions (REM-06).
 
-alerts ve actions ilgili iş kalemleriyle eklenir. Üretici tarafı sözleşme sınıfıyla doğrular
-ve to_json() ile yazar. Tüketici tarafı from_json() (Python) ya da spark_ddl() (Spark) ile okur.
+Üretici tarafı sözleşme sınıfıyla doğrular ve to_json() ile yazar. Tüketici tarafı from_json()
+(Python) ya da spark_ddl() (Spark) ile okur.
 """
 
 import json
@@ -19,6 +20,7 @@ class _Contract:
 
     TYPES: ClassVar[dict[str, tuple[type, ...]]]  # alan -> izin verilen tipler; NONE = boş olabilir
     SQL: ClassVar[dict[str, str]]  # alan -> Spark tipi
+    TIME_FIELDS: ClassVar[tuple[str, ...]] = ("event_time",)  # saat dilimli ISO-8601 olmalı
 
     def __post_init__(self) -> None:
         for f in fields(self):
@@ -29,12 +31,14 @@ class _Contract:
                 raise ValueError(f"{f.name}: boş olamaz")
         if self.schema_version != SCHEMA_VERSION:
             raise ValueError(f"schema_version: {self.schema_version} desteklenmiyor")
-        try:
-            parsed = datetime.fromisoformat(self.event_time.replace("Z", "+00:00"))
-        except ValueError:
-            raise ValueError(f"event_time: ISO-8601 değil: {self.event_time!r}") from None
-        if parsed.tzinfo is None:
-            raise ValueError(f"event_time: saat dilimi yok: {self.event_time!r}")
+        for name in self.TIME_FIELDS:
+            value = getattr(self, name)
+            try:
+                parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            except ValueError:
+                raise ValueError(f"{name}: ISO-8601 değil: {value!r}") from None
+            if parsed.tzinfo is None:
+                raise ValueError(f"{name}: saat dilimi yok: {value!r}")
         self._check()
 
     def _check(self) -> None:
@@ -211,6 +215,80 @@ class AlertEvent(_Contract):
             raise ValueError(f"alert_time: ISO-8601 değil: {self.alert_time!r}") from None
 
 
+@dataclass(frozen=True)
+class ActionEvent(_Contract):
+    """actions mesajı (REM-06, ADR-0005, ADR-0011): Remediator'ın her alarm için verdiği karar.
+    Aksiyon alınmasa da (koruma, bilinmeyen arıza tipi) kayıt yazılır; denetim izi budur.
+    K6 = finished_at - alert_time (yalnızca status = success ve action != none)."""
+
+    TIME_FIELDS: ClassVar = ("alert_time", "started_at", "finished_at")
+    FAULT_TYPES: ClassVar = ("disk_full", "memory_exhaustion", "service_unresponsive", "unknown")
+    ACTIONS: ClassVar = ("ansible:disk_cleanup", "docker:restart", "none")
+    STATUSES: ClassVar = (
+        "success",
+        "failed",
+        "skipped_unknown",  # arıza tipi belirlenemedi: aksiyon yok, yalnızca kayıt
+        "skipped_duplicate",
+        "skipped_disabled",
+        "skipped_not_allowlisted",
+        "skipped_cooldown",
+        "skipped_rate_limit",
+    )
+    TYPES: ClassVar = {
+        "action_id": (str,),
+        "alert_id": (str,),
+        "source": (str,),
+        "target": (str, NONE),
+        "fault_type": (str,),
+        "action": (str,),
+        "dry_run": (bool,),
+        "status": (str,),
+        "alert_time": (str,),
+        "started_at": (str,),
+        "finished_at": (str,),
+        "detail": (str, NONE),
+        "schema_version": (int,),
+    }
+    SQL: ClassVar = {
+        "action_id": "STRING",
+        "alert_id": "STRING",
+        "source": "STRING",
+        "target": "STRING",
+        "fault_type": "STRING",
+        "action": "STRING",
+        "dry_run": "BOOLEAN",
+        "status": "STRING",
+        "alert_time": "TIMESTAMP",
+        "started_at": "TIMESTAMP",
+        "finished_at": "TIMESTAMP",
+        "detail": "STRING",
+        "schema_version": "INT",
+    }
+
+    action_id: str
+    alert_id: str
+    source: str  # alarmın kaynağı (ör. demo-client)
+    target: str | None  # aksiyonun hedef servisi (ör. demo-app); eşlenemezse boş
+    fault_type: str
+    action: str
+    dry_run: bool
+    status: str
+    alert_time: str
+    started_at: str
+    finished_at: str
+    detail: str | None = None
+    schema_version: int = SCHEMA_VERSION
+
+    def _check(self) -> None:
+        for name, allowed in (
+            ("fault_type", self.FAULT_TYPES),
+            ("action", self.ACTIONS),
+            ("status", self.STATUSES),
+        ):
+            if getattr(self, name) not in allowed:
+                raise ValueError(f"{name}: {allowed} dışında: {getattr(self, name)!r}")
+
+
 def spark_ddl(cls: type[_Contract]) -> str:
     """Spark from_json şeması; alan sırası ve listesi dataclass'tan gelir, iki taraf kopamaz."""
     return ", ".join(f"{f.name} {cls.SQL[f.name]}" for f in fields(cls))
@@ -224,3 +302,4 @@ def required_fields(cls: type[_Contract]) -> list[str]:
 LOG_EVENT_DDL = spark_ddl(LogEvent)
 METRIC_EVENT_DDL = spark_ddl(MetricEvent)
 ALERT_EVENT_DDL = spark_ddl(AlertEvent)
+ACTION_EVENT_DDL = spark_ddl(ActionEvent)

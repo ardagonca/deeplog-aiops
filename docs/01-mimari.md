@@ -195,7 +195,9 @@ Geliştirme makinesinde 32 GB RAM var. WSL2 12 GB bellek ve 6 çekirdekle sını
 | spark-master | 8080 (UI), 7077 | 512 MB |
 | spark-worker | 8081 (UI) | 3,5 GB |
 | spark-ingest (sürekli sürücü) | 4040 (UI) | 1 GB |
-| spark-detect (sürekli sürücü, PyTorch skorlama) | 4041 (UI) | 1,5 GB |
+| spark-detect (profil `hdfs`; sürekli sürücü, PyTorch skorlama) | 4041 (UI) | 1,5 GB |
+| spark-detect-demo (profil `demo`) | 4042 (UI) | 1 GB |
+| demo-loadgen (profil `demo`) | – | 128 MB |
 | spark-job (geçici sürücü) | – | 1 GB |
 | socket-proxy | – | 64 MB |
 | metrics-agent | – | 128 MB |
@@ -203,7 +205,7 @@ Geliştirme makinesinde 32 GB RAM var. WSL2 12 GB bellek ve 6 çekirdekle sını
 | remediator (planlanan, profil `demo`) | – | 256 MB |
 | panel-api (planlanan) | 8001 | 256 MB |
 
-Toplamlar [tests/test_compose.py](../tests/test_compose.py) ile profil bazında denetlenir. Profilsiz (hep açık) servisler 8,7 GB tutar; `jobs` profiliyle 9,7 GB, `demo` profiliyle 9,1 GB olur. `jobs` ve `demo` aynı anda açılmaz. İz B'de HDFS tespit işinin kapatılması REM-03'te ele alınır.
+Toplamlar [tests/test_compose.py](../tests/test_compose.py) ile profil bazında denetlenir. Profilsiz (hep açık) servisler 7,2 GB tutar; `hdfs` profiliyle 8,7 GB, `demo` profiliyle 8,7 GB, `jobs` profiliyle 8,2 GB olur. `hdfs` ve `demo` aynı anda açılmaz: ikisi de bir tespit sürücüsü ve bir worker çekirdeği ister.
 
 Worker 3 çekirdek ve 3 GB executor belleği sunar. Her Spark uygulaması 1 çekirdek ve 1 GB ile sınırlıdır (`spark.cores.max`); bu sayede sürekli çalışan `spark-ingest` ve `spark-detect`'in yanında aynı anda bir `spark-job` daha çalışabilir. `spark-detect` skorlamayı executor'da değil sürücüde yaptığı için sürücü belleği daha büyüktür. Docker Compose profilleriyle yalnızca o anki iş için gereken servisler açılır. Örneğin model eğitimi sırasında panel ve demo sistem kapalı tutulur.
 

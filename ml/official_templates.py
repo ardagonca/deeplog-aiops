@@ -33,16 +33,23 @@ def _compile(template: str) -> Callable[[str], bool]:
     return match
 
 
-def load_templates(path: Path) -> list[tuple[str, Callable[[str], bool]]]:
+def compile_templates(rows: list[tuple[str, str]]) -> list[tuple[str, Callable[[str], bool]]]:
     """(EventId, eşleştirici) listesi; en özgül şablon önce gelecek şekilde sıralı."""
-    with Path(path).open(newline="", encoding="utf-8") as f:
-        rows = [(r["EventId"], r["EventTemplate"]) for r in csv.DictReader(f)]
-    rows.sort(key=lambda r: -len(WILDCARD.sub("", r[1])))  # sort kararlı: eşitlikte dosya sırası
+    rows = sorted(rows, key=lambda r: -len(WILDCARD.sub("", r[1])))  # kararlı: eşitlikte sıra
     return [(event_id, _compile(template)) for event_id, template in rows]
 
 
+def load_templates(path: Path) -> list[tuple[str, Callable[[str], bool]]]:
+    with Path(path).open(newline="", encoding="utf-8") as f:
+        return compile_templates([(r["EventId"], r["EventTemplate"]) for r in csv.DictReader(f)])
+
+
 def load_matcher(path: Path) -> Callable[[str], str | None]:
-    templates = load_templates(path)
+    return matcher_from(load_templates(path))
+
+
+def matcher_from(templates: list[tuple[str, Callable[[str], bool]]]) -> Callable[[str], str | None]:
+    """Model paketindeki şablonlar için de kullanılır (demo izi, Drain; ml.train_demo)."""
 
     def event_id(content: str) -> str | None:
         return next((eid for eid, match in templates if match(content)), None)

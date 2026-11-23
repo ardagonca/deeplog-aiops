@@ -1,7 +1,8 @@
 """EXP-03 (K5 tespit gecikmesi + canlı/offline tutarlılık): spark-detect uçtan uca.
 
 Kullanım: uv run python -m ml.exp03 [--sessions 20000] [--rate 5000]
-Önce: altyapı açık (spark-detect dahil) ve model paketi data/models/<model> yerelde de var.
+Önce: altyapı açık, spark-detect dahil (docker compose --profile hdfs up -d --wait); model paketi
+data/models/<model> yerelde de var.
 1. Test bölmesinden --sessions oturum seçilir (sabit tohum) ve satırları EKSİKSİZ, orijinal sırayla
    --rate hızında oynatılır (replayer --blocks); dosya başını oynatmak oturumları keserdi.
 2. alerts topic'i, bu koşunun kaynağından --wait sn boyunca yeni alarm gelmeyene kadar okunur
@@ -96,7 +97,7 @@ def main() -> int:
 
     print(f"{args.sessions:,} oturum oynatılıyor ({source}, {args.rate} log/sn)", flush=True)
     if args.restart_after:
-        restart = ["docker", "compose", "restart", "spark-detect"]
+        restart = ["docker", "compose", "--profile", "hdfs", "restart", "spark-detect"]
         threading.Timer(
             args.restart_after, subprocess.run, [restart], {"cwd": ROOT / "infra", "check": True}
         ).start()

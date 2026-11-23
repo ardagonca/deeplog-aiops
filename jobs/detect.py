@@ -12,7 +12,11 @@
 - İş geride kaldığında (batch maxOffsetsPerTrigger ile doluysa) zaman aşımı işletilmez: aksi halde
   Kafka'da bekleyen olayları olan oturumlar erken kapanırdı (ör. yeniden başlamadan sonra).
 
-Çalıştırma: compose'taki spark-detect servisi.
+- İki iz (ADR-0011): HDFS_v1'de oturum satırdaki blok kimliğidir; blok yoksa (demo sistem) olayın
+  kendi session_key'i. Her iz kendi örneğinde çalışır: DETECT_SOURCES kaynak filtresi (Java
+  regex), DETECT_MODEL paketi (paket templates.csv taşıyorsa şablonlar oradan), DETECT_CHECKPOINT.
+
+Çalıştırma: compose'taki spark-detect (profil hdfs) ve spark-detect-demo (profil demo) servisleri.
 """
 
 import os
@@ -34,7 +38,8 @@ TRIGGER = os.environ.get("DETECT_TRIGGER", "2 seconds")
 TIMEOUT_S = float(os.environ.get("DETECT_SESSION_TIMEOUT_SEC", "120"))
 EXPIRE_EVERY_S = 5
 MAX_OFFSETS = 200_000
-CHECKPOINT = "/checkpoints/detect"
+CHECKPOINT = os.environ.get("DETECT_CHECKPOINT", "/checkpoints/detect")
+SOURCES = os.environ.get("DETECT_SOURCES", "^(?!demo-)")  # varsayılan: demo izi dışındaki her şey
 STATE_DIR = f"{CHECKPOINT}/detector_state"
 KEEP_STATES = 2
 
@@ -88,13 +93,18 @@ def main() -> None:
     import torch
 
     from ml.detector import Detector
-    from ml.official_templates import load_matcher
+    from ml.official_templates import compile_templates, load_matcher, matcher_from
     from ml.package import load
 
     spark = SparkSession.builder.appName("detect").getOrCreate()
     spark.sparkContext.addFile(f"hdfs:///models/deeplog/{MODEL}", recursive=True)
     torch.set_num_threads(2)
-    detector = Detector(load(SparkFiles.get(MODEL)), load_matcher(TEMPLATES), TIMEOUT_S)
+    pkg = load(SparkFiles.get(MODEL))
+    if pkg.templates:  # demo izi: paketin kendi (Drain) şablonları
+        matcher = matcher_from(compile_templates(list(pkg.templates.items())))
+    else:  # HDFS_v1: resmi Loghub şablonları (ADR-0008)
+        matcher = load_matcher(TEMPLATES)
+    detector = Detector(pkg, matcher, TIMEOUT_S)
     store = _StateStore(spark)
     if (saved := store.latest()) is not None:
         detector.restore(saved, time.time())
@@ -160,8 +170,7 @@ def main() -> None:
             f"durum {time.perf_counter() - t3:.1f} sn",
             flush=True,
         )
-        # shortcut: bloksuz satırlar explode'da düştüğü için sayım eksik olabilir (geride kalmışken
-        # "yetişti" sanılır); bloksuz kaynak (demo sistem, M4) gelince Kafka kaydı başına sayılmalı.
+        # Oturumsuz satırlar (blok da anahtar da yok) sayıma girmez; bunlar seyrek (ör. başlangıç).
         if offsets < MAX_OFFSETS:
             caught_up.set()
         else:
@@ -201,11 +210,16 @@ def main() -> None:
             F.col("offset").alias("kafka_offset"),
         )
         .where("e.message IS NOT NULL AND e.event_time IS NOT NULL")
+        .where(F.col("e.source").rlike(SOURCES))
+        .withColumn(
+            "blocks", F.array_distinct(F.regexp_extract_all("e.message", F.lit(r"(blk_-?\d+)"), 1))
+        )
         # Satırdaki her blok kendi oturumuna (offline ml.sessions.build_sessions ile aynı kural:
-        # satır içi tekrar bir kez; ör. çoklu "delete" satırı listedeki her bloğa gider).
+        # satır içi tekrar bir kez; ör. çoklu "delete" satırı listedeki her bloğa gider). Blok
+        # yoksa olayın kendi oturum anahtarı (demo: istek kimliği); o da yoksa satır oturumsuzdur.
         .select(
             F.explode(
-                F.array_distinct(F.regexp_extract_all("e.message", F.lit(r"(blk_-?\d+)"), 1))
+                F.when(F.size("blocks") > 0, F.col("blocks")).otherwise(F.array("e.session_key"))
             ).alias("session_key"),
             "e.source",
             "e.message",
@@ -213,6 +227,7 @@ def main() -> None:
             "kafka_partition",
             "kafka_offset",
         )
+        .where(F.col("session_key").isNotNull())
         .writeStream.foreachBatch(on_batch)
         .option("checkpointLocation", CHECKPOINT)
         .trigger(processingTime=TRIGGER)

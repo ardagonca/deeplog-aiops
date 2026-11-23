@@ -263,8 +263,10 @@ services:
       start_period: 20s
 
   # RT-01..03: hız katmanı. logs.raw -> oturum skorlama (DeepLog + sayım yeniliği) -> alerts.
+  # İz A (HDFS_v1). İz B ile aynı anda açılmaz (bellek bütçesi, worker çekirdekleri).
   spark-detect:
     <<: *spark-driver
+    profiles: ["hdfs"]
     hostname: spark-detect
     init: true
     restart: on-failure
@@ -284,6 +286,39 @@ services:
       hdfs-init:
         condition: service_completed_successfully
     mem_limit: 1536m  # sürücüde PyTorch skorlama
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:4040/ > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+  # İz B (demo sistem): aynı tespit işi, demo modeli ve kısa oturum zaman aşımıyla (ADR-0011).
+  spark-detect-demo:
+    <<: *spark-driver
+    profiles: ["demo"]
+    hostname: spark-detect-demo
+    init: true
+    restart: on-failure
+    command: ["/opt/deeplog/jobs/detect.py"]
+    environment:
+      PYTHONPATH: /opt/deeplog
+      DETECT_MODEL: ${DETECT_DEMO_MODEL:-deeplog-demo-v1}
+      DETECT_SOURCES: "^demo-"
+      DETECT_CHECKPOINT: /checkpoints/detect-demo
+      DETECT_TRIGGER: ${DETECT_TRIGGER:-2 seconds}
+      # İstek oturumu ms'ler sürer; zaman aşımı istemcinin 2 sn'lik zaman aşımından uzun olmalı.
+      DETECT_SESSION_TIMEOUT_SEC: ${DETECT_DEMO_SESSION_TIMEOUT_SEC:-10}
+    ports:
+      - "127.0.0.1:4042:4040"
+    depends_on:
+      spark-worker:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      hdfs-init:
+        condition: service_completed_successfully
+    mem_limit: 1g  # oturumlar kısa: açık oturum sayısı HDFS izinden çok küçük
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://localhost:4040/ > /dev/null"]
       interval: 10s
@@ -349,6 +384,60 @@ services:
       retries: 3
       start_period: 15s
 
+  # REM-05: Remediator'ın Docker API vekili. Yeniden başlatma ve exec (Ansible) için POST açıktır; bu
+  # yüzden yalnızca iç "remediation" ağındadır ve oraya yalnızca Remediator bağlıdır (risk R-06).
+  remediation-proxy:
+    image: tecnativa/docker-socket-proxy:v0.5.0
+    profiles: ["demo"]
+    init: true
+    restart: on-failure
+    environment:
+      CONTAINERS: 1
+      POST: 1
+      EXEC: 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks: [remediation]
+    mem_limit: 64m
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:2375/_ping | grep -q OK"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  # REM-04..06: alarm -> arıza tipi -> korumalar -> aksiyon -> actions (ADR-0005, ADR-0011).
+  remediator:
+    image: deeplog-remediator:1
+    build: images/remediator
+    profiles: ["demo"]
+    init: true
+    restart: on-failure
+    command: ["python", "-m", "remediation.service"]
+    environment:
+      KAFKA_BOOTSTRAP: kafka:29092
+      DOCKER_HOST: tcp://remediation-proxy:2375
+      DRY_RUN: ${REMEDIATION_DRY_RUN:-true}  # deneylerde false (ADR-0005)
+      AUTOREMEDIATION_ENABLED: ${AUTOREMEDIATION_ENABLED:-true}  # kill switch
+      TARGETS: demo-app=deeplog-demo-app-1
+      ALERT_SOURCES: demo-app=demo-app,demo-client=demo-app
+      HEALTH_URLS: demo-app=http://demo-app:8000/health
+    volumes:
+      - ..:/opt/deeplog:ro
+    networks: [default, remediation]
+    depends_on:
+      remediation-proxy:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    mem_limit: 256m
+    healthcheck:  # sağlık yoklaması her saniye /tmp/heartbeat'e dokunur
+      test: ["CMD", "python", "-c",
+             "import os, sys, time; sys.exit(time.time() - os.stat('/tmp/heartbeat').st_mtime > 15)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
   # İş göndermek için: docker compose --profile jobs run --rm spark-job /opt/deeplog/jobs/<betik>.py
   spark-job:
     <<: *spark-driver
@@ -369,3 +458,8 @@ volumes:
   kafka_data:
   hdfs_namenode:
   hdfs_datanode:
+
+networks:
+  default:
+  remediation:
+    internal: true  # dışarı çıkışı yok; yalnızca Remediator ile vekili arasında
