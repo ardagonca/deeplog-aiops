@@ -174,7 +174,7 @@ def get_order(oid: int):
         orders.info("order %d not found", oid)
         return JSONResponse({"error": "not found"}, status_code=404)
     body = path.read_bytes()
-    orders.info("order %d loaded (%d bytes)", oid, len(body))
+    orders.info("loaded order %d (%d bytes)", oid, len(body))
     return JSONResponse(content={"id": oid, "size": len(body)})
 
 
@@ -189,9 +189,9 @@ async def put_order(oid: int, request: Request):
     except OSError as e:
         if not _no_space(e):
             raise
-        orders.error("order %d save failed: %s", oid, e.strerror)
+        orders.error("failed to save order %d: %s", oid, e.strerror)
         return JSONResponse({"error": "no space"}, status_code=507)
-    orders.info("order %d saved (%d bytes)", oid, len(body))
+    orders.info("saved order %d (%d bytes)", oid, len(body))
     return JSONResponse({"id": oid, "saved": len(body)})
 
 

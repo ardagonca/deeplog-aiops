@@ -42,12 +42,15 @@ def pick(rng: random.Random) -> tuple[str, str, bytes | None]:
 
 
 def call(base: str, method: str, path: str, body: bytes | None, timeout: float) -> None:
-    token = logs.request_id.set(uuid.uuid4().hex)
+    rid = uuid.uuid4().hex
+    token = logs.request_id.set(rid)
     try:
         route = path.split("?")[0]
-        client.info("request sent %s %s", method, route)
+        client.info("client sent %s %s", method, route)
         start = time.perf_counter()
-        req = urllib.request.Request(base + path, data=body, method=method)
+        req = urllib.request.Request(
+            base + path, data=body, method=method, headers={"X-Request-ID": rid}
+        )  # istemci ve uygulama logları aynı oturumda birleşir
         try:
             with urllib.request.urlopen(req, timeout=timeout) as response:
                 status = response.status
@@ -56,15 +59,15 @@ def call(base: str, method: str, path: str, body: bytes | None, timeout: float) 
         except (TimeoutError, urllib.error.URLError, OSError) as e:
             reason = getattr(e, "reason", e)
             if isinstance(reason, TimeoutError) or "timed out" in str(reason):
-                client.error("request timeout after %.0f s", timeout)
+                client.error("client timeout after %.0f s", timeout)
             elif isinstance(reason, ConnectionRefusedError):
-                client.error("connection refused")
+                client.error("client connection refused")
             else:
-                client.error("connection error: %s", type(reason).__name__)
+                client.error("client connection error: %s", type(reason).__name__)
             return
         ms = (time.perf_counter() - start) * 1000
         level = logging.WARNING if status >= 500 else logging.INFO
-        client.log(level, "response %d in %d ms", status, ms)
+        client.log(level, "client received %d in %d ms", status, ms)
     finally:
         logs.request_id.reset(token)
 

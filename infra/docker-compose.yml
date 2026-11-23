@@ -353,6 +353,9 @@ services:
   spark-job:
     <<: *spark-driver
     profiles: ["jobs"]
+    volumes:  # depo salt okunur; yalnızca dışa aktarımlar (ör. jobs/export_demo.py) yazılabilir
+      - ..:/opt/deeplog:ro
+      - ../data/exports:/exports
     depends_on:
       spark-worker:
         condition: service_healthy

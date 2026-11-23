@@ -41,3 +41,10 @@ def test_versions_are_immutable(tmp_path):
     save(_package(), tmp_path)
     with pytest.raises(FileExistsError):
         save(_package(), tmp_path)
+
+
+def test_templates_roundtrip_and_absent_by_default(tmp_path):
+    assert load(save(_package("yok"), tmp_path)).templates is None
+    pkg = _package("var")
+    pkg.templates = {"D1": "order <*> saved (<*> bytes)", "D2": 'a "tırnaklı", virgüllü'}
+    assert load(save(pkg, tmp_path)).templates == pkg.templates

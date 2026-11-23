@@ -209,7 +209,7 @@ def main() -> None:
             ).alias("session_key"),
             "e.source",
             "e.message",
-            F.date_format("e.event_time", "yyyy-MM-dd'T'HH:mm:ss.SSSXXX").alias("event_time"),
+            F.date_format("e.event_time", "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX").alias("event_time"),
             "kafka_partition",
             "kafka_offset",
         )

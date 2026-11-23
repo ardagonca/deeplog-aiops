@@ -1,5 +1,8 @@
 """Demo sistemin logları: HDFS_v1 ile aynı satır biçimi ve logs.raw'a LogEvent olarak gönderim.
 
+event_time mikrosaniye hassasiyetindedir: istekler birkaç ms sürer; ms'de aynı ana düşen istemci
+ve uygulama olayları Kafka sırasına kalır, o da iki üretici arasında rastgeledir.
+
 Satır biçimi "YYMMDD HHMMSS PID SEVİYE bileşen: içerik" (ml.parsing.HDFS_LINE ile aynı); şablonlama
 ve oturum kodu iki izde ortak kalır. Oturum = istek (ADR-0011): session_key, isteğin kimliğidir.
 """
@@ -40,7 +43,7 @@ class KafkaLogHandler(logging.Handler):
                 id=str(uuid.uuid4()),
                 source=self.source,
                 event_time=datetime.fromtimestamp(record.created, timezone.utc)
-                .isoformat(timespec="milliseconds")
+                .isoformat(timespec="microseconds")
                 .replace("+00:00", "Z"),
                 message=self.format(record),
                 session_key=key,

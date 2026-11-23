@@ -40,7 +40,7 @@ def test_request_logs_share_client_request_id_and_parse_like_hdfs(demo):
     events = _events(sent)
     assert [content_of(e.message) for e in events] == [
         "request start POST /api/orders/7",
-        "order 7 saved (7 bytes)",
+        "saved order 7 (7 bytes)",
         events[-1].message.split(": ", 1)[1],  # süre değişken
     ]
     assert content_of(events[-1].message).startswith("request done 200 in ")
@@ -73,7 +73,7 @@ def test_no_space_is_logged_as_error_and_returns_507(demo, monkeypatch):
     assert client.post("/api/orders/3", content=b"{}").status_code == 507
     errors = [e for e in _events(sent) if e.level == "ERROR"]
     assert [content_of(e.message) for e in errors] == [
-        "order 3 save failed: No space left on device"
+        "failed to save order 3: No space left on device"
     ]
 
 
