@@ -101,13 +101,13 @@ services:
     environment:
       # Klasör yoksa (ilk açılış) namenode formatlanır; sonraki açılışlarda veri korunur.
       ENSURE_NAMENODE_DIR: /hadoop/dfs/name/current
-      HADOOP_HEAPSIZE_MAX: 512m
+      HADOOP_HEAPSIZE_MAX: 384m
     volumes:
       - hdfs_namenode:/hadoop/dfs/name
     depends_on:
       hdfs-volume-init:
         condition: service_completed_successfully
-    mem_limit: 1g
+    mem_limit: 512m
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://localhost:9870/ > /dev/null"]
       interval: 10s
@@ -124,13 +124,13 @@ services:
       - "127.0.0.1:9864:9864"
     env_file: hadoop.env
     environment:
-      HADOOP_HEAPSIZE_MAX: 512m
+      HADOOP_HEAPSIZE_MAX: 384m
     volumes:
       - hdfs_datanode:/hadoop/dfs/data
     depends_on:
       namenode:
         condition: service_healthy
-    mem_limit: 1g
+    mem_limit: 512m
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://localhost:9864/ > /dev/null"]
       interval: 10s
@@ -176,13 +176,13 @@ services:
     init: true
     restart: on-failure
     command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker",
-              "--cores", "2", "--memory", "2g", "spark://spark-master:7077"]
+              "--cores", "3", "--memory", "3g", "spark://spark-master:7077"]
     ports:
       - "127.0.0.1:8081:8081"
     depends_on:
       spark-master:
         condition: service_healthy
-    mem_limit: 3g
+    mem_limit: 3584m
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://localhost:8081/ > /dev/null"]
       interval: 10s
@@ -256,6 +256,35 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
+
+  # RT-01..03: hız katmanı. logs.raw -> oturum skorlama (DeepLog + sayım yeniliği) -> alerts.
+  spark-detect:
+    <<: *spark-driver
+    hostname: spark-detect
+    init: true
+    restart: on-failure
+    command: ["/opt/deeplog/jobs/detect.py"]
+    environment:  # YAML birleştirmesi sığdır: PYTHONPATH burada yinelenmeli
+      PYTHONPATH: /opt/deeplog
+      DETECT_MODEL: ${DETECT_MODEL:-hdfs-v1}
+      DETECT_TRIGGER: ${DETECT_TRIGGER:-2 seconds}
+      DETECT_SESSION_TIMEOUT_SEC: ${DETECT_SESSION_TIMEOUT_SEC:-120}
+    ports:
+      - "127.0.0.1:4041:4040"
+    depends_on:
+      spark-worker:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      hdfs-init:
+        condition: service_completed_successfully
+    mem_limit: 1536m  # sürücüde PyTorch skorlama
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:4040/ > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
   # İş göndermek için: docker compose --profile jobs run --rm spark-job /opt/deeplog/jobs/<betik>.py
   spark-job:

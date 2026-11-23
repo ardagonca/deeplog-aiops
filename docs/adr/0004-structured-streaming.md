@@ -1,6 +1,6 @@
 # ADR-0004: Hız katmanında Spark Structured Streaming
 
-- Durum: Kabul. Sürüm bilgisi [ADR-0007](0007-spark-4-ve-python-310.md) ile güncellendi (Spark 4.2.1).
+- Durum: Kabul. Sürüm bilgisi [ADR-0007](0007-spark-4-ve-python-310.md) ile güncellendi (Spark 4.2.1). Oturum durumunun tutulma biçimi [ADR-0010](0010-tespit-foreachbatch.md) ile değişti (`applyInPandasWithState` yerine `foreachBatch`).
 - Tarih: 2026-11-17
 
 ## Bağlam

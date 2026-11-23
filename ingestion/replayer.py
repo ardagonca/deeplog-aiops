@@ -18,7 +18,7 @@ import re
 import sys
 import time
 import uuid
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -28,6 +28,12 @@ DATA_DIR = Path(__file__).resolve().parents[1] / "data" / "HDFS_v1"
 SOURCE = "hdfs-replay"
 BLOCK_ID = re.compile(r"blk_-?\d+")
 PROGRESS_EVERY = 100_000
+
+
+def only_blocks(lines: Iterable[str], wanted: set[str]) -> Iterator[str]:
+    """Seçilen bloklardan en az birini içeren satırlar, orijinal sırayla. Oturumların eksiksiz
+    oynatılması için (EXP-03): dosya başını oynatmak oturumları yarıda keser."""
+    return (line for line in lines if not wanted.isdisjoint(BLOCK_ID.findall(line)))
 
 
 def load_labels(path: Path) -> dict[str, int]:
@@ -104,6 +110,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--labels", type=Path, default=DATA_DIR / "preprocessed" / "anomaly_label.csv"
     )
+    parser.add_argument(
+        "--blocks", type=Path, help="yalnızca bu bloklara (satır başına bir kimlik) ait satırlar"
+    )
     args = parser.parse_args(argv)
 
     for path in (args.log, args.labels):
@@ -148,6 +157,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"{args.log.name} -> {args.topic} @ {args.bootstrap}, hedef {args.rate:,.0f} log/sn")
     start = time.perf_counter()
     with args.log.open(encoding="utf-8", errors="replace") as lines:
+        if args.blocks:
+            lines = only_blocks(lines, set(args.blocks.read_text(encoding="utf-8").split()))
         sent = replay(lines, send, labels, args.rate, args.limit, source=args.source)
     send_secs = time.perf_counter() - start
     undelivered = producer.flush(60)

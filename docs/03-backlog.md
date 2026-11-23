@@ -63,13 +63,14 @@ Bu dosya projenin backlog'udur (18.11.2026'da resmi takvime göre yeniden planla
 
 | ID | İş | Kabul kriteri | Sa | Öncelik | Bağımlılık | Sprint |
 |---|---|---|---|---|---|---|
-| RT-01 | Tespit job'u: `logs.raw` okuma, Drain3 yalnızca eşleştirme modunda (bilinmeyen şablon → `UNKNOWN`) | Şablon sözlüğü modelle aynı sürümden yükleniyor | 8 | Must | ML-07 | S3 |
-| RT-02 | Oturum durumu: `applyInPandasWithState` ile son h olay; durum zaman aşımı | 1 saat çalışmada durum boyutu sınırlı kalıyor | 8 | Must | RT-01 | S3 |
-| RT-03 | Skorlama (model worker başına bir kez yükleniyor), eşik kontrolü ve `alerts` topic'ine yazma | Alarmlar şemaya uygun | 6 | Must | RT-02 | S3 |
-| RT-04 | Gecikme ölçümü (`event_time`, `alert_time`) ve p50/p95 hesaplama betiği | – | 4 | Must | RT-03 | S4 |
-| RT-05 | Tutarlılık testleri: aynı oturumlar için offline ve streaming skorları aynı; tespit job'u `label` alanını okumuyor | Testler CI'da çalışıyor | 4 | Must | RT-03 | S4 |
-| RT-06 | EXP-03: gecikme deneyi ve trigger süresinin ayarlanması | K5 sonucu | 8 | Must | RT-04 | S4 |
-| RT-07 | Runbook: tespit job'u ve model sürümü değiştirme | – | 2 | Should | RT-03 | S4 |
+| RT-01 | Tespit job'u: `logs.raw` okuma, şablon eşleştirme (HDFS_v1'de resmi şablonlar, ADR-0008; bilinmeyen şablon → `UNKNOWN`) | Şablon sözlüğü modelle aynı sürümden yükleniyor | 8 | Must | ML-07 | ✅ S3 |
+| RT-02 | Oturum durumu: son h olay ve sayım vektörü; durum zaman aşımı ([ADR-0010](adr/0010-tespit-foreachbatch.md): `foreachBatch`, durum sürücü belleğinde) | 1 saat çalışmada durum boyutu sınırlı kalıyor | 8 | Must | RT-01 | 🔶 S3 (zaman aşımı birim testli; 1 saatlik ölçüm RT-08 ile) |
+| RT-03 | Skorlama (model worker başına bir kez yükleniyor), eşik kontrolü ve `alerts` topic'ine yazma | Alarmlar şemaya uygun | 6 | Must | RT-02 | ✅ S3 |
+| RT-04 | Gecikme ölçümü (`event_time`, `alert_time`) ve p50/p95 hesaplama betiği | – | 4 | Must | RT-03 | ✅ S4 |
+| RT-05 | Tutarlılık testleri: aynı oturumlar için offline ve streaming skorları aynı; tespit job'u `label` alanını okumuyor | Testler CI'da çalışıyor | 4 | Must | RT-03 | ✅ S4 |
+| RT-06 | EXP-03: gecikme deneyi ve trigger süresinin ayarlanması | K5 sonucu ([experiments/EXP-03/2026-11-23_1731](../experiments/EXP-03/2026-11-23_1731/ozet.md): p95 6,9 sn) | 8 | Must | RT-04 | ✅ S4 |
+| RT-07 | Runbook: tespit job'u ve model sürümü değiştirme | – | 2 | Should | RT-03 | ✅ S4 |
+| RT-08 | Kalıcı tespit durumu: açık oturumlar batch sınırında HDFS'e yazılır, yeniden başlatmada yüklenir (şu an bellekte, ADR-0010) | Yeniden başlatma sonrası açık oturumlarda ek yanlış alarm yok | 6 | Should | RT-03 | M4 öncesi |
 
 ## EP-5 REM — Otonom iyileştirme (M4)
 

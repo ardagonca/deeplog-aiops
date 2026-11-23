@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from ingestion.replayer import load_labels, replay, to_event
+from ingestion.replayer import load_labels, only_blocks, replay, to_event
 from ingestion.schemas import LogEvent
 
 NOW = datetime(2026, 11, 23, 10, 15, 30, 123456, tzinfo=timezone.utc)
@@ -86,3 +86,8 @@ def test_replay_uses_given_source_for_value_and_fallback_key():
         ("exp01-r5000-1", b"blk_-1608999687919862906"),
         ("exp01-r5000-1", b"exp01-r5000-1"),  # blok yoksa anahtar kaynak adıdır
     ]
+
+
+def test_only_blocks_keeps_complete_sessions_in_order():
+    lines = ["a blk_1 x\n", "b blk_2\n", "c blk_3 blk_1\n", "d yok\n"]
+    assert list(only_blocks(lines, {"blk_1"})) == ["a blk_1 x\n", "c blk_3 blk_1\n"]
