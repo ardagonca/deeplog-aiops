@@ -21,6 +21,7 @@ metastore_db/
 
 # Deney çıktıları: config'ler ve özetler depoya girer, ham çıktılar girmez
 experiments/**/raw/
+experiments/**/logs/
 
 # Editör ve işletim sistemi
 .vscode/

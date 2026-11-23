@@ -1,6 +1,6 @@
 # ADR-0003: Drain + DeepLog ana model, Isolation Forest baseline
 
-- Durum: Kabul
+- Durum: Kabul. Şablon kaynağı HDFS_v1 izi için [ADR-0008](0008-sablon-kaynagi.md) ile daraltıldı (resmi Loghub şablonları); demo sistemde Drain geçerli.
 - Tarih: 2026-11-17
 
 ## Bağlam

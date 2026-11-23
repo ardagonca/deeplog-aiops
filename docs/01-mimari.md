@@ -22,7 +22,7 @@ flowchart LR
     H[(HDFS - Parquet veri gölü)]
   end
   subgraph BATCH[Batch katmanı - Spark]
-    P[Drain şablonlama]
+    P[Şablonlama - resmi şablonlar / Drain]
     T[DeepLog eğitimi - PyTorch]
   end
   subgraph SPEED[Hız katmanı - Structured Streaming]
@@ -56,7 +56,7 @@ flowchart LR
 | Replayer | Python | HDFS_v1 loglarını ayarlanabilir hızla Kafka'ya basar | ING |
 | Metrik ajanı (`metrics-agent`) | Python, Docker Engine API (salt okuma vekili `socket-proxy` üzerinden) | Projedeki konteynerlerin CPU, bellek, disk G/Ç ve ağ ölçümlerini 5 sn'de bir toplar. Demo sistemin `/health` çıktısındaki disk doluluğu REM-01 ile eklenecek | ING, REM |
 | Ingest job (`spark-ingest`) | Structured Streaming | `logs.raw` topic'ini HDFS raw bölgesine Parquet olarak yazar, sözleşmeye uymayanları karantinaya ayırır. `metrics.raw` ve `actions` topic'leri ING-05 ve REM ile eklenecek | ING |
-| Şablonlama job | Spark batch, Drain3 (`mapInPandas`) | Ham logları şablon kimliğine (`template_id`) çevirir, şablon sözlüğü üretir | ML |
+| Şablonlama job | Spark batch (`mapInPandas`): HDFS_v1 için resmi Loghub şablon eşleştiricisi, demo sistem için Drain3 ([ADR-0008](adr/0008-sablon-kaynagi.md)) | Ham logları şablon kimliğine (`template_id`) çevirir; şablon sözlüğünü üretir | ML |
 | DeepLog eğitimi | PyTorch (tek düğüm) | Model eğitimi ve değerlendirmesi | ML |
 | Tespit job | Structured Streaming, `applyInPandasWithState` | Oturum bazlı risk skoru üretir, eşik aşılınca alarm yazar | RT |
 | Remediator | Python, Ansible, Docker SDK (ayrı konteyner) | Alarmdan arıza tipini çıkarır, korumaları uygular ve aksiyonu çalıştırır | REM |
@@ -76,7 +76,7 @@ sequenceDiagram
   participant UI as Panel
   App->>K: logs.raw (event_time = t0)
   K->>S: micro-batch
-  S->>S: Drain eşleştirme, oturum penceresi, DeepLog top-g
+  S->>S: Şablon eşleştirme, oturum penceresi, DeepLog top-g
   S->>K: alerts (alert_time = t1, risk ≥ eşik)
   K->>RM: alert
   RM->>RM: arıza tipi ve korumalar

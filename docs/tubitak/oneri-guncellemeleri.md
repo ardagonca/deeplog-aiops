@@ -1,26 +1,37 @@
-# TÜBİTAK 2209-A Araştırma Önerisi Formu: Güncelleme Metinleri (GOV-05)
+# TÜBİTAK 2209-A: Kabul Edilen Öneriden Sapmalar ve Sonuç Raporu Malzemesi (GOV-05)
 
-Bu belge, başvuru formunun ("2209 (2).pdf", 2025/1 dönemi taslağı) değişmesi gereken bölümleri için **forma doğrudan aktarılacak yeni metinleri** içerir. Değişikliklerin gerekçeleri ilgili ADR'lerde, sayısal hedefler ise [Proje Tüzüğü §4](../00-proje-tuzugu.md#4-başarı-ölçütleri-kpi) dosyasındadır. Formdaki her sayı o tablodan alınmalıdır.
+Proje kabul edilmiş ve desteklenen bir TÜBİTAK 2209-A projesidir. Resmi dönem **12.05.2026 – 12.05.2027**'dir. Bu belgenin iki amacı var:
 
-> Formu doldurmadan önce: Başvurunun yapılacağı dönemin güncel şablonu TÜBİTAK'tan indirilmeli ve kapak sayfasındaki "2025 Yılı / 2025/1 Dönem" bilgisi güncellenmelidir.
+1. Kabul edilen öneriden yapılan her sapmayı gerekçesi ve kanıtıyla kayda geçirmek. Bu kayıt sonuç raporunda kullanılacaktır.
+2. Sonuç raporunun bölümleri için güncel taslak metinler sağlamak.
 
-## Değişiklik özeti
+Resmi takvim ve durumu [Yol Haritası §1](../02-yol-haritasi.md#1-resmi-çalışma-takvimi-kabul-edilen-öneri)'de, sayısal iç hedefler [Proje Tüzüğü §4](../00-proje-tuzugu.md#4-başarı-ölçütleri-kpi)'te tutulur.
 
-| Form bölümü | Sorun (eski taslak) | Yapılan değişiklik |
+## 1. Sapma kaydı
+
+Formdaki başarı ölçütlerinin hepsi korunmaktadır. Yöntemdeki değişiklikler, bu ölçütlere daha güvenilir biçimde ulaşmak için yapılmıştır.
+
+| Öneride (formun ilgili bölümü) | Sorun | Gerçekleşen / gerekçe |
 |---|---|---|
 | Özet, 1.2, 2 | Ana model Isolation Forest + K-Means, "Spark MLlib ile Isolation Forest" (MLlib'de Isolation Forest yok) | Ana model DeepLog (LSTM) + Drain; Isolation Forest karşılaştırma (baseline) yöntemi ([ADR-0003](../adr/0003-deeplog-ana-model.md)) |
 | Özet, 1.2, Şekil 1 | Apache Flume ve ZooKeeper | Çıkarıldı; Kafka KRaft modunda tek başına alımı üstleniyor ([ADR-0002](../adr/0002-veri-alimi.md)) |
 | 2, Şekil 1 | "Spark Streaming" (eski DStream API'si) | Spark Structured Streaming 4.2 ([ADR-0004](../adr/0004-structured-streaming.md), [ADR-0007](../adr/0007-spark-4-ve-python-310.md)) |
-| 1.2, 3.1, 3.2 | Çelişen hedefler: 500 / 1.000 / 10.000 log/sn; %85 / %90 "doğruluk"; 30 sn / 1 dk | Tek hedef tablosu (K1–K10); "doğruluk" yerine Precision/Recall |
+| 1.2, 3.1, 3.2 | Çelişen hedefler: 500 / 1.000 / 10.000 log/sn; %85 / %90 "doğruluk"; 30 sn / 1 dk | Formdaki takvim ölçütleri (1.000 log/sn, Precision > %85, < 1 dk) bağlayıcı olarak korundu. Bunların üstüne daha sıkı iç hedefler (K1–K10) eklendi; "doğruluk" yerine Precision/Recall raporlanır |
+| 3.1, satır 3 (26.09 – 29.11.2026) | Model aşaması | Sistem Kasım 2026'da ölçülebilir hedefler ve otomatik testlerle yeniden kuruldu; model aşamasının Aralık 2026 başında tamamlanması planlanıyor. Sonraki satırların resmi tarihleri değişmiyor |
+| 3.1, satır 3 (Isolation Forest) | Taahhüt edilen yöntem | Isolation Forest **çıkarılmadı**. Karşılaştırma yöntemi olarak eğitilir; hiperparametresi (max_samples) doğrulama setinde ızgarayla seçilir ve formdaki ölçüte (Precision > %85) göre ayrıca raporlanır. HDFS_v1'de zayıf ve tohuma duyarlı çıktığı için sistemde karar verici olarak kullanılmıyor (EXP-02, [ADR-0009](../adr/0009-hibrit-tespit.md)) |
+| 2 (Yöntem: anomali tespiti) | Tek model (Isolation Forest) | Hibrit tespit ([ADR-0009](../adr/0009-hibrit-tespit.md)): oturum kararı olay sayımı yeniliğiyle, erken uyarı DeepLog + oturum sonu olayıyla. Gerekçe: EXP-02'de formdaki Precision ölçütünü yalnızca sayım yeniliği sağladı; DeepLog ise oturum sürerken tahmin yaptığı için öngörü (erken uyarı) iddiasını taşıyor |
+| 2 (Yöntem: şablonlama) | Şablonlama yöntemi belirtilmemişti | HDFS_v1'de Loghub'ın resmi şablonları ([ADR-0008](../adr/0008-sablon-kaynagi.md)); Drain tam veride iki ayrı olayı tek şablonda birleştiriyordu. Demo sistemde Drain |
 | Şekil 2 | Arıza tipi ile aksiyon yer değiştirmiş; eşik sabit 0,85 | Disk dolu → Ansible disk temizleme, servis yanıt vermiyor → Docker yeniden başlatma; eşik doğrulama setinde seçilir |
 | 1.1 | "Öngörü" iddiası var, ölçütü yok | Öngörü süresi (lead time) tanımlandı ve H2 hipotezi olarak test ediliyor |
 | 2 | Model doğrulaması yalnızca sentetik hatalarla | Gerçek etiketli HDFS_v1 benchmark'ı (İz A) + demo sistemde arıza enjeksiyonu (İz B) ([ADR-0006](../adr/0006-veri-ve-degerlendirme.md)) |
-| 2, Ön çalışma | "Saniyede 500 log aktarıldı" | Gerçekleştirilen ön çalışmanın ölçülmüş sonuçları |
+| 2, Ön çalışma | "Saniyede 500 log aktarıldı" | Ölçülen sonuçlar §2'deki "Gerçekleştirilen çalışmalar" bölümünde |
 | Ek-1 | Yıl/yazar hataları, tekrar eden kaynak, atıf yapılmayan kaynaklar | Kaynakça düzeltildi |
 
 ---
 
-## Özet (yerine)
+## 2. Sonuç raporu için taslak metinler
+
+### Özet
 
 Bulut ve mikroservis mimarilerinin yaygınlaşması, sistemlerin ürettiği log ve metrik hacmini insanların izleyebileceği düzeyin çok üzerine çıkarmıştır. Geleneksel izleme araçları reaktiftir; alarm, kesinti yaşandıktan sonra gelir. Bu projenin amacı, dağıtık sistemlerden akan log ve metrik verisini gerçek zamanlı işleyen, anormallikleri arıza gerçekleşmeden yakalayan ve tanımlı senaryolarda sistemi insan müdahalesi olmadan toparlayan, tamamen açık kaynak bileşenlerden oluşan bir AIOps prototipi geliştirmektir.
 
@@ -32,7 +43,7 @@ Yöntem, gerçek etiketli Loghub HDFS_v1 veri setinde (575.061 oturum) Precision
 
 ---
 
-## 1.1 Literatür Özeti ve Bilimsel Nitelik (yerine)
+### Literatür özeti ve bilimsel nitelik
 
 Log tabanlı anomali tespiti üzerine yapılan çalışmalar (He vd., 2021; Landauer vd., 2023) iki eğilim göstermektedir. Birincisi, yöntemlerin çoğu geçmişe dönük statik veri setleri üzerinde değerlendirilmekte; canlı akış üzerindeki gecikme ve kaynak kullanımı raporlanmamaktadır. İkincisi, çalışmalar çoğunlukla "tespit" aşamasında kalmakta; tespitin otomatik bir iyileştirme aksiyonuna nasıl dönüştüğü ve bu dönüşümün sistem üzerindeki etkisi ölçülmemektedir. Kendi kendini iyileştiren sistemler literatürü (Ghosh vd., 2007) ise karar ve aksiyon tarafına odaklanmakta, öğrenilmiş anomali modelleriyle bütünleşik açık uygulamalar sunmamaktadır.
 
@@ -49,7 +60,7 @@ DeepLog (Du vd., 2017), sistem loglarını Drain (He vd., 2017) ile şablon kiml
 
 ---
 
-## 1.2 Amaç ve Hedefler (yerine)
+### Amaç ve hedefler
 
 Projenin amacı, dağıtık sistemlerdeki arızaları log dizilerinden erken tespit eden ve tanımlı senaryolarda insan müdahalesi olmadan iyileştiren, açık kaynak bir AIOps prototipini (TRL-4) tasarlamak, geliştirmek ve ölçülebilir hedeflerle doğrulamaktır. Başarı ölçütleri şunlardır:
 
@@ -68,9 +79,9 @@ Projenin amacı, dağıtık sistemlerdeki arızaları log dizilerinden erken tes
 
 ---
 
-## 2. Yöntem: değişen paragraflar
+### Yöntem
 
-**Mimari (Şekil 1 açıklamasının yerine):** Sistem, Lambda mimarisine (Marz ve Warren, 2015) göre üç katmandan oluşur.
+**Mimari:** Sistem, Lambda mimarisine (Marz ve Warren, 2015) göre üç katmandan oluşur.
 - **Alım:** Uygulama logları ve konteyner metrikleri (CPU, bellek, disk G/Ç, ağ) Apache Kafka'ya (Kreps vd., 2011; KRaft modu) gönderilir.
 - **Depolama:** Spark Structured Streaming işi veriyi HDFS üzerindeki veri gölüne Parquet biçiminde, checkpoint mekanizmasıyla kayıpsız ve tekrarsız yazar; sözleşmeye uymayan kayıtları karantinaya ayırır.
 - **Batch katmanı:** Logları Drain ile şablonlara ayırır, DeepLog modelini eğitir.
@@ -78,13 +89,13 @@ Projenin amacı, dağıtık sistemlerdeki arızaları log dizilerinden erken tes
 - **Aksiyon katmanı:** Alarmları tüketen ayrı bir servis, arıza tipini kurallarla belirleyip Docker veya Ansible ile aksiyon alır.
 - **Sunum:** Sonuçlar React tabanlı bir panelde gösterilir.
 
-**Şekil 1'de yapılacak değişiklikler:**
-- Apache Flume kaldırılacak.
-- "Spark Streaming" yerine "Spark Structured Streaming" yazılacak.
-- "Betch Data" yazım hatası "Batch Data" olarak düzeltilecek.
-- Aksiyon katmanına "Remediator (Ansible/Docker)" kutusu eklenecek.
+**Şekil 1'in güncel hali (öneriye göre farklar):**
+- Apache Flume kullanılmıyor (ADR-0002).
+- "Spark Streaming" yerine "Spark Structured Streaming" kullanılıyor.
+- Formdaki şekilde geçen "Betch Data" yazım hatası rapordaki şekilde "Batch Data" olarak düzeltilmelidir.
+- Aksiyon katmanında ayrı bir "Remediator (Ansible/Docker)" servisi var (ADR-0005).
 
-**Otonom karar akışı (Şekil 2 açıklamasının yerine):**
+**Otonom karar akışı:**
 1. Hız katmanı her oturum için 0 ile 1 arasında bir risk skoru üretir. Skor, son tahminlerde gerçekleşen olayın modelin ilk g adayı arasında olmadığı durumların oranıdır; bilinmeyen bir şablon görülürse skor 1 olur.
 2. Eşik, sabit bir değer yerine doğrulama setinde F1'i en yüksek yapan değer olarak seçilir.
 3. Eşik aşıldığında arıza tipi metriklerle birlikte belirlenir:
@@ -93,9 +104,9 @@ Projenin amacı, dağıtık sistemlerdeki arızaları log dizilerinden erken tes
    - Diğer durumlarda yalnızca bildirim yapılır.
 4. Her aksiyon şu korumalardan geçer: izin listesi, aynı hedefe 5 dakikada en fazla 1 aksiyon, saatte en fazla 6 aksiyon, acil durdurma anahtarı.
 
-**Şekil 2'de yapılacak değişiklikler:**
-- "Sistem Cevap Vermiyor" dalı "Docker: Servisi Yeniden Başlat" kutusuna, "Disk Dolu" dalı "Ansible: Disk Temizle" kutusuna bağlanacak. Taslakta bu ikisi yer değiştirmişti.
-- "Skor > 0.85" yerine "Skor > eşik (doğrulama setinde seçilir)" yazılacak.
+**Şekil 2'nin güncel hali (öneriye göre farklar):**
+- "Sistem Cevap Vermiyor" dalı "Docker: Servisi Yeniden Başlat" kutusuna, "Disk Dolu" dalı "Ansible: Disk Temizle" kutusuna bağlıdır. Formdaki şekilde bu ikisi yer değiştirmişti; metin doğruydu. Rapordaki şekil buna göre çizilmelidir.
+- "Skor > 0.85" yerine "Skor > eşik (doğrulama setinde seçilir)" kullanılıyor.
 
 **Veri ve değişkenler:**
 - **İz A (bilimsel değerlendirme):** Gerçek bir Hadoop kümesinden toplanmış, etiketli Loghub HDFS_v1 veri seti kullanılır (Zhu vd., 2023): 11.175.629 log satırı ve 575.061 oturum; oturumların %2,93'ü anormal. Oturumlar zamana göre sıralanıp %60 eğitim (yalnızca normal oturumlar), %10 doğrulama ve %30 test olarak bölünür. Test seti yalnızca bir kez kullanılır.
@@ -111,35 +122,34 @@ Projenin amacı, dağıtık sistemlerdeki arızaları log dizilerinden erken tes
 
 ---
 
-## Ön Çalışma ve Fizibilite (yerine)
+### Gerçekleştirilen çalışmalar ve ölçülen sonuçlar
 
-Proje önerisi öncesinde altyapı ve veri hattı tamamlanmış, aşağıdaki sonuçlar ölçülmüştür. Kodlar ve ölçüm betikleri açık kaynak olarak yayımlanmıştır (https://github.com/ardagonca/deeplog-aiops).
+Resmi takvimin 1. ve 2. satırlarına karşılık gelen altyapı ve veri hattı tamamlanmış, aşağıdaki sonuçlar ölçülmüştür. Kodlar ve ölçüm betikleri açık kaynak olarak yayımlanmıştır (https://github.com/ardagonca/deeplog-aiops).
 
 - **Altyapı:** Kafka 4.3 (KRaft), Hadoop HDFS 3.4 ve Spark 4.2, Docker Compose ile tek bir makinede kuruldu. Sistemin bütünlüğü, Kafka'dan Spark'a ve oradan HDFS'e uzanan otomatik bir uçtan uca testle doğrulanmaktadır.
 - **Dayanıklılık:** Sürekli çalışan 8 servisin her biri süreci zorla sonlandırılarak (SIGKILL) çökertildi; hepsi kendiliğinden yeniden başladı ve 7–43 sn içinde hizmete döndü. Tüm servislerin aynı anda kapatıldığı ani kapanma senaryosunda sistem yaklaşık 60 sn'de geri geldi. Hiçbir senaryoda veri kaybı olmadı (17/17 kontrol).
 - **Kayıpsız alım:** 150.003 kayıt yazılırken alım işi zorla sonlandırıldı. İş kendiliğinden yeniden başladı ve kaldığı yerden devam etti; Kafka'daki her kayıt HDFS'te tam olarak bir kez bulundu (kayıp 0, tekrar 0). Biçimi bozuk kayıtlar düşürülmeden, nedenleriyle birlikte karantinaya ayrıldı.
 - **Metrik toplama:** Konteyner metrikleri, yalnızca okuma izni olan bir Docker API vekili üzerinden 5 sn aralıkla toplanmaktadır (ölçülen medyan aralık 5,0 sn, p95 5,06 sn).
-- **Alım hızı (EXP-01):** _[Deney sürüyor; sonuçlar `experiments/EXP-01/` altındaki özetten aktarılacak.]_
+- **Alım hızı (EXP-01):** 1.000, 2.500, 5.000 ve 10.000 log/sn'de üçer koşu yapıldı; her koşu 11 dk sürdü, ilk 1 dk ısınma olarak dışarıda bırakıldı. Toplam 36,6 milyon mesaj Kafka'dan HDFS'e yazıldı. **Kayıp 0, tekrar 0.** Alım işi her hızda gelen hıza yetişti; p95 gecikme en kötü durumda 29,1 sn ve bu değer 30 sn'lik micro-batch aralığından kaynaklanıyor. **Formdaki "saniyede en az 1.000 log kayıpsız" ölçütü 10 katıyla sağlandı.**
+- **Şablonlama (ML-01):** Loghub'ın elle etiketlenmiş 2.000 satırlık HDFS örneğinde Drain'in gruplama doğruluğu 1,0'dır. Tam HDFS_v1'de resmi 29 şablon satırların %100'ünü kapsıyor; Loghub'ın blok dizileriyle %100 uyumlu ([ADR-0008](../adr/0008-sablon-kaynagi.md)).
+- **Oturumlar (ML-02):** 575.061 blok oturumu kuruldu ve resmi veriyle birebir örtüşüyor. Oturumlar kronolojik olarak bölündü: eğitimde 333.878 normal oturum; doğrulamada 57.506 oturum (anormal %3,40); testte 172.519 oturum (anormal %2,16).
+- **Anomali tespiti (EXP-02, test seti, 5 tohum):**
+  - Olay sayımı yeniliği: Precision 0,980, Recall 1,000, F1 0,990. **Formdaki "Precision > %85" ölçütü sağlandı.**
+  - DeepLog + oturum sonu: F1 0,717 ± 0,064.
+  - Makaledeki haliyle DeepLog: F1 0,627.
+  - Isolation Forest (öneride taahhüt edilen yöntem): Precision 0,824, F1 0,427.
+
+  DeepLog, Isolation Forest'tan anlamlı ölçüde iyidir (McNemar p ≈ 10⁻¹⁴⁹). Yöntem seçiminin gerekçesi [ADR-0009](../adr/0009-hibrit-tespit.md)'dadır.
 
 ---
 
-## 3.1 Çalışma Takvimi (yerine)
+### Çalışma takvimi
 
-Ay numaraları proje başlangıcına göredir. Başarı ölçütleri 1.2'deki tabloya atıf yapar.
-
-| Tarih aralığı | Faaliyet | Kim | Başarı ölçütü | Katkı |
-|---|---|---|---|---|
-| Ay 1–2 | Kafka (KRaft), HDFS ve Spark'ın Docker üzerinde kurulumu, sağlık kontrolleri ve otomatik dayanıklılık testleri | Arda Gonca | Tüm servislerin sağlık kontrollerinden geçmesi; uçtan uca testin başarılı olması | %10 |
-| Ay 2–4 | Log ve metrik toplama hattının (replayer, metrik ajanı, Structured Streaming ile HDFS'e yazma) geliştirilmesi | Arda Gonca | K1 ve K2 | %15 |
-| Ay 4–7 | Drain ile log şablonlama, DeepLog modelinin geliştirilmesi ve Isolation Forest ile karşılaştırılması | Arda Gonca | K3 ve K4 | %25 |
-| Ay 7–10 | Structured Streaming ile gerçek zamanlı tespit ile Docker/Ansible tabanlı otonom iyileştirme ve güvenlik korumaları | Arda Gonca | K5, K6, K7, K8; K9 ölçülür | %30 |
-| Ay 10–12 | Web paneli, tüm modüllerin entegrasyonu ve uçtan uca nihai testler | Arda Gonca | K10 ve tüm ölçütlerin tek koşuda yeniden üretilmesi | %20 |
-
-> Başvuru tarihinde tamamlanmış işler (yukarıdaki ilk iki satırın büyük bölümü) Ön Çalışma'ya taşınabilir; bu durumda katkı yüzdeleri toplamı 100 olacak şekilde yeniden dağıtılır.
+Resmi takvim değişmemiştir; satırların durumu ve gerçekleşme tarihleri [Yol Haritası §1](../02-yol-haritasi.md#1-resmi-çalışma-takvimi-kabul-edilen-öneri)'dedir.
 
 ---
 
-## 3.2 Risk Yönetimi (yerine)
+### Riskler ve alınan tedbirler
 
 | En önemli riskler | Alınacak tedbirler (B planı) |
 |---|---|
@@ -151,7 +161,7 @@ Ay numaraları proje başlangıcına göredir. Başarı ölçütleri 1.2'deki ta
 
 ---
 
-## 3.3 Araştırma Olanakları (eklenecek satır)
+### Kullanılan olanaklar
 
 | Altyapı | Kullanım amacı |
 |---|---|
@@ -159,41 +169,65 @@ Ay numaraları proje başlangıcına göredir. Başarı ölçütleri 1.2'deki ta
 
 ---
 
-## Ek-1: Kaynakça (düzeltilmiş)
+## 3. Kaynakça (doğrulanmış)
 
 Düzeltilen ve eklenen kaynaklar:
 - **He vd. survey:** Metinde 2020 olarak geçen atıf 2021 olarak düzeltildi. İkinci yazarın adı "Pinjia, H." değil "He, P." olarak yazıldı.
 - **Landauer vd. (2023):** Kaynakçada iki kez geçiyordu; tekrar kaldırıldı.
 - **Blessing vd. (2025):** Yayın yeri belirtilmediği için çıkarıldı.
 - **Pahl ve Jamshidi:** Künyesi doğrulanamadığı için çıkarıldı.
-- **Eklenenler:** Zhu vd. (2023), Armbrust vd. (2018), Lerner (2014).
+- **Eklenenler:** Zhu vd. (2023), Zhu vd. (2019), Armbrust vd. (2018), Lerner (2014). Tüm künyeler web üzerinden doğrulandı; ayrıntılar en alttaki "Doğrulama notları" bölümünde.
 
-Armbrust, M., Das, T., Torres, J., Yavuz, B., Zhu, S., Xin, R., Ghodsi, A., Stoica, I., & Zaharia, M. (2018). Structured streaming: A declarative API for real-time applications in Apache Spark. *Proceedings of the 2018 International Conference on Management of Data (SIGMOD)*, 601–613.
+Armbrust, M., Das, T., Torres, J., Yavuz, B., Zhu, S., Xin, R., Ghodsi, A., Stoica, I., & Zaharia, M. (2018). Structured streaming: A declarative API for real-time applications in Apache Spark. In *Proceedings of the 2018 International Conference on Management of Data (SIGMOD '18)* (pp. 601–613). ACM. https://doi.org/10.1145/3183713.3190664
 
-Chandola, V., Banerjee, A., & Kumar, V. (2009). Anomaly detection: A survey. *ACM Computing Surveys*, 41(3), 1–58.
+Chandola, V., Banerjee, A., & Kumar, V. (2009). Anomaly detection: A survey. *ACM Computing Surveys, 41*(3), Article 15. https://doi.org/10.1145/1541880.1541882
 
-Du, M., Li, F., Zheng, G., & Srikumar, V. (2017). DeepLog: Anomaly detection and diagnosis from system logs through deep learning. *Proceedings of the 2017 ACM SIGSAC Conference on Computer and Communications Security*, 1285–1298.
+Du, M., Li, F., Zheng, G., & Srikumar, V. (2017). DeepLog: Anomaly detection and diagnosis from system logs through deep learning. In *Proceedings of the 2017 ACM SIGSAC Conference on Computer and Communications Security (CCS '17)* (pp. 1285–1298). ACM. https://doi.org/10.1145/3133956.3134015
 
-Ghosh, D., Sharman, R., Rao, H. R., & Upadhyaya, S. (2007). Self-healing systems—survey and synthesis. *Decision Support Systems*, 42(4), 2164–2185.
+Ghosh, D., Sharman, R., Rao, H. R., & Upadhyaya, S. (2007). Self-healing systems—Survey and synthesis. *Decision Support Systems, 42*(4), 2164–2185. https://doi.org/10.1016/j.dss.2006.06.011
 
-He, P., Zhu, J., Zheng, Z., & Lyu, M. R. (2017). Drain: An online log parsing approach with fixed depth tree. *2017 IEEE International Conference on Web Services (ICWS)*, 33–40.
+He, P., Zhu, J., Zheng, Z., & Lyu, M. R. (2017). Drain: An online log parsing approach with fixed depth tree. In *2017 IEEE International Conference on Web Services (ICWS)* (pp. 33–40). IEEE. https://doi.org/10.1109/ICWS.2017.13
 
-He, S., He, P., Chen, Z., Yang, T., Su, Y., & Lyu, M. R. (2021). A survey on automated log analysis for reliability engineering. *ACM Computing Surveys*, 54(6), 1–37.
+He, S., He, P., Chen, Z., Yang, T., Su, Y., & Lyu, M. R. (2021). A survey on automated log analysis for reliability engineering. *ACM Computing Surveys, 54*(6), Article 130. https://doi.org/10.1145/3460345
 
-Kreps, J., Narkhede, N., & Rao, J. (2011). Kafka: A distributed messaging system for log processing. *Proceedings of the NetDB*, 1–7.
+Kreps, J., Narkhede, N., & Rao, J. (2011). Kafka: A distributed messaging system for log processing. In *Proceedings of the 6th International Workshop on Networking Meets Databases (NetDB '11)*. Athens, Greece.
 
-Landauer, M., Onder, S., Skopik, F., & Wurzenberger, M. (2023). Deep learning for anomaly detection in log data: A survey. *Machine Learning with Applications*, 12, 100470.
+Landauer, M., Onder, S., Skopik, F., & Wurzenberger, M. (2023). Deep learning for anomaly detection in log data: A survey. *Machine Learning with Applications, 12*, Article 100470. https://doi.org/10.1016/j.mlwa.2023.100470
 
-Lerner, A. (2014). *The cost of downtime*. Gartner Blog Network.
+Lerner, A. (2014, July 16). *The cost of downtime*. Gartner Blog Network. https://blogs.gartner.com/andrew-lerner/2014/07/16/the-cost-of-downtime/
 
-Liu, F. T., Ting, K. M., & Zhou, Z. H. (2008). Isolation forest. *2008 Eighth IEEE International Conference on Data Mining*, 413–422.
+Liu, F. T., Ting, K. M., & Zhou, Z.-H. (2008). Isolation forest. In *2008 Eighth IEEE International Conference on Data Mining (ICDM)* (pp. 413–422). IEEE. https://doi.org/10.1109/ICDM.2008.17
 
 Marz, N., & Warren, J. (2015). *Big Data: Principles and best practices of scalable realtime data systems*. Manning Publications.
 
-Yazdanparast, Z. (2024). A survey on self-healing software system. *arXiv preprint* arXiv:2403.00455.
+Yazdanparast, Z. (2024). *A survey on self-healing software system* (arXiv:2403.00455). arXiv. https://doi.org/10.48550/arXiv.2403.00455
 
-Zaharia, M., Chowdhury, M., Franklin, M. J., Shenker, S., & Stoica, I. (2010). Spark: Cluster computing with working sets. *HotCloud*, 10, 95.
+Zaharia, M., Chowdhury, M., Franklin, M. J., Shenker, S., & Stoica, I. (2010). Spark: Cluster computing with working sets. In *Proceedings of the 2nd USENIX Workshop on Hot Topics in Cloud Computing (HotCloud '10)*. USENIX Association.
 
-Zhu, J., He, S., He, P., Liu, J., & Lyu, M. R. (2023). Loghub: A large collection of system log datasets for AI-driven log analytics. *2023 IEEE 34th International Symposium on Software Reliability Engineering (ISSRE)*, 355–366.
+Zhu, J., He, S., He, P., Liu, J., & Lyu, M. R. (2023). Loghub: A large collection of system log datasets for AI-driven log analytics. In *2023 IEEE 34th International Symposium on Software Reliability Engineering (ISSRE)* (pp. 355–366). IEEE. https://doi.org/10.1109/ISSRE59848.2023.00071
+
+Zhu, J., He, S., Liu, J., He, P., Xie, Q., Zheng, Z., & Lyu, M. R. (2019). Tools and benchmarks for automated log parsing. In *2019 IEEE/ACM 41st International Conference on Software Engineering: Software Engineering in Practice (ICSE-SEIP)* (pp. 121–130). IEEE.
 
 > Bifet vd. (2015, StreamDM) metinde kullanılmıyorsa kaynakçadan çıkarılabilir. Kaynakçadaki her kaynağa metinde en az bir atıf olmalıdır.
+
+## 4. Kaynakça doğrulama notları
+
+Künyeler 2026-11-18'de web'den doğrulandı. Metinde atıf yapılmayan kaynaklar: Chandola vd. (2009), Liu vd. (2008), Yazdanparast (2024), Zaharia vd. (2010) ve eklenen Zhu vd. (2019). Bunlara metinde atıf eklenmeli ya da kaynakçadan çıkarılmalıdır. Zhu vd. (2019), ön çalışmadaki şablonlama doğruluğu ölçütünün (Grouping Accuracy) kaynağıdır; Ön Çalışma bölümünde bu ölçüt kullanılırsa atıf orada yapılmalıdır.
+
+| Kaynak | Durum | Bağlantı |
+|---|---|---|
+| Armbrust vd. (2018) | Doğrulandı; sayfa (601–613) doğru, DOI eklendi | https://dblp1.uni-trier.de/rec/conf/sigmod/ArmbrustDTYZX0S18.html |
+| Chandola vd. (2009) | Düzeltildi: "1–58" yerine Article 15 (58 sayfa), DOI eklendi | https://www.profsandhu.com/cs5323_s17/a15-chandola.pdf |
+| Du vd. (2017) | Doğrulandı; sayfa (1285–1298) doğru, DOI eklendi | https://dblp.org/rec/conf/ccs/Du0ZS17 |
+| Ghosh vd. (2007) | Doğrulandı; DOI eklendi | https://dblp.org/rec/journals/dss/GhoshSRU07 |
+| He vd. (2017) | Doğrulandı; DOI eklendi | https://researchr.org/publication/HeZZL17 |
+| He vd. (2021) | Düzeltildi: "1–37" yerine Article 130, DOI eklendi | https://arxiv.org/abs/2009.07237v2 |
+| Kreps vd. (2011) | Düzeltildi: yayın yeri tam adıyla yazıldı (NetDB '11, Atina). Sayfa aralığı (1–7) resmi bir kaynakta doğrulanamadığı için çıkarıldı | https://people.csail.mit.edu/matei/courses/2015/6.S897/readings/kafka.pdf |
+| Landauer vd. (2023) | Doğrulandı; Article 100470, DOI eklendi | https://doaj.org/article/50b62d84af08411ebc50e4fa37f10fb6 |
+| Lerner (2014) | Düzeltildi: tarih ve bağlantı eklendi. 5.600 $/dk rakamı ikincil kaynaklarda doğrulandı; blog yazısının kendisine erişilemedi | https://blogs.gartner.com/andrew-lerner/2014/07/16/the-cost-of-downtime/ |
+| Liu vd. (2008) | Doğrulandı; sayfa (413–422) doğru, DOI eklendi | https://researchr.org/publication/LiuTZ08/bibtex |
+| Marz ve Warren (2015) | Doğrulandı (Manning, ISBN 9781617290343) | https://www.manning.com/books/big-data |
+| Yazdanparast (2024) | Doğrulandı (arXiv:2403.00455, yalnızca v1) | https://arxiv.org/abs/2403.00455v1 |
+| Zaharia vd. (2010) | Düzeltildi: "HotCloud, 10, 95" gerçek bir cilt/sayfa değil; yayın yeri HotCloud '10 olarak yazıldı | https://usenix.org/conference/hotcloud-10/spark-cluster-computing-working-sets |
+| Zhu vd. (2023) | Doğrulandı; sayfa (355–366) doğru, DOI eklendi | https://arxiv.org/abs/2008.06448 |
+| Zhu vd. (2019) | Eklendi; ICSE-SEIP 2019, 121–130 | https://researchr.org/publication/ZhuHLHXZL19 |

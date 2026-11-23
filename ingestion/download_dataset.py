@@ -1,6 +1,6 @@
 """ING-01: Loghub veri setlerini indirir, SHA-256 ile doğrular ve data/<ad>/ altına açar.
 
-Kullanım:  uv run python -m ingestion.download_dataset [HDFS_v1]
+Kullanım:  uv run python -m ingestion.download_dataset [HDFS_v1] [HDFS_2k]
 Yeniden çalıştırıldığında, doğrulanmış arşivi tekrar indirmez ve açılmış veriyi tekrar açmaz.
 
 Veri: Loghub (Zhu vd., ISSRE 2023), doi:10.5281/zenodo.8196385, CC BY 4.0.
@@ -15,11 +15,21 @@ from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 
-# SHA-256 ilk indirmede hesaplandı; aynı dosyanın MD5'i Zenodo'nun yayımladığı değerle eşleşti.
+# ad -> (adres, SHA-256, dosya adı). .zip olanlar data/raw/'a indirilip data/<ad>/'a açılır,
+# diğerleri doğrudan data/<ad>/<dosya adı> olarak kaydedilir.
 DATASETS = {
+    # SHA-256 ilk indirmede hesaplandı; aynı dosyanın MD5'i Zenodo'nun yayımladığı değerle eşleşti.
     "HDFS_v1": (
         "https://zenodo.org/api/records/8196385/files/HDFS_v1.zip/content",
         "04f919f2185821f23f045dca611a7586429bdabc601bd7b43f30005f8e289b01",  # md5 76a24b4d…
+        "HDFS_v1.zip",
+    ),
+    # ML-01: elle etiketlenmiş 2.000 satır (şablon doğruluğu ölçümü). Commit'e sabitlenmiş adres.
+    "HDFS_2k": (
+        "https://raw.githubusercontent.com/logpai/loghub/374038faa4ca122dd7ca0730372c0b78f76f8597"
+        "/HDFS/HDFS_2k.log_structured.csv",
+        "729df59774e3dde934044028546d2a55d5e3d4370b9d12fcebbe4c087b2bf7b4",
+        "HDFS_2k.log_structured.csv",
     ),
 }
 
@@ -82,14 +92,16 @@ def main(argv: list[str] | None = None) -> int:
     if unknown := set(args.datasets) - DATASETS.keys():
         parser.error(f"bilinmeyen veri seti: {', '.join(sorted(unknown))}")
     for name in args.datasets or DATASETS:
-        url, sha256 = DATASETS[name]
-        archive = DATA_DIR / "raw" / f"{name}.zip"
+        url, sha256, filename = DATASETS[name]
         target = DATA_DIR / name
-        print(f"{name}: arşiv hazırlanıyor (gerekirse indirilir)...", flush=True)
-        downloaded = fetch(url, archive, sha256)
-        print(f"{name}: arşiv {'indirildi' if downloaded else 'zaten vardı'}, SHA-256 doğrulandı")
-        extracted = extract(archive, target)
-        print(f"{name}: {'açıldı' if extracted else 'zaten açıktı'} -> {target}")
+        is_zip = filename.endswith(".zip")
+        dest = DATA_DIR / "raw" / filename if is_zip else target / filename
+        print(f"{name}: hazırlanıyor (gerekirse indirilir)...", flush=True)
+        downloaded = fetch(url, dest, sha256)
+        print(f"{name}: {'indirildi' if downloaded else 'zaten vardı'}, SHA-256 doğrulandı")
+        if is_zip:
+            extracted = extract(dest, target)
+            print(f"{name}: {'açıldı' if extracted else 'zaten açıktı'} -> {target}")
     return 0
 
 
