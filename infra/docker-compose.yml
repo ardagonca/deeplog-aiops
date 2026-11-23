@@ -2,6 +2,10 @@
 # (tests/test_compose.py kontrol eder).
 name: deeplog
 
+x-rotated-logs: &rotated-logs
+  driver: json-file
+  options: {max-size: "10m", max-file: "3"}
+
 x-spark: &spark
   image: deeplog-spark:4.2.1
   build: images/spark
@@ -292,6 +296,7 @@ services:
     image: deeplog-demo:1
     build: images/demo
     profiles: ["demo"]
+    logging: *rotated-logs  # istek başına stdout satırı: sınırsız büyümesin
     hostname: demo-app
     init: true
     restart: "no"  # çöken servisi Docker değil Remediator kaldırmalı (K7)
@@ -316,6 +321,30 @@ services:
       test: ["CMD", "python", "-c",
              "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # REM-03: normal yük ve istemci (ağ geçidi) gözlemi logları (ADR-0011).
+  demo-loadgen:
+    image: deeplog-demo:1
+    build: images/demo
+    profiles: ["demo"]
+    logging: *rotated-logs  # istek başına stdout satırı: sınırsız büyümesin
+    init: true
+    restart: on-failure
+    command: ["python", "-m", "demo_target.loadgen", "--url", "http://demo-app:8000",
+              "--kafka", "kafka:29092", "--rate", "${DEMO_RATE:-20}"]
+    volumes:
+      - ..:/opt/deeplog:ro
+    depends_on:
+      demo-app:
+        condition: service_healthy
+    mem_limit: 128m
+    healthcheck:  # üretici her saniye /tmp/heartbeat dosyasına dokunur
+      test: ["CMD", "python", "-c",
+             "import os, sys, time; sys.exit(time.time() - os.stat('/tmp/heartbeat').st_mtime > 15)"]
+      interval: 10s
       timeout: 5s
       retries: 3
       start_period: 15s

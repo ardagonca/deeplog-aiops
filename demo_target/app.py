@@ -26,13 +26,12 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from demo_target import logs
+from demo_target import ORDER_IDS, logs
 
 VAR = Path(os.environ.get("DEMO_VAR_DIR", "/app/var"))
 FAULTS_ENABLED = os.environ.get("FAULTS_ENABLED") == "true"
 WARN_PCT = 80.0
 DEGRADED_PCT = 90.0
-ORDER_IDS = 1000  # kimlik uzayı sınırlı: normal yük, sipariş dosyalarıyla diski doldurmaz
 SILENT = ("/health", "/fault")
 REQUEST_ID = re.compile(r"[A-Za-z0-9-]{1,64}")
 CHUNK = 1 << 20
