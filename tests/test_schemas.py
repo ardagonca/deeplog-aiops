@@ -2,7 +2,13 @@ import json
 
 import pytest
 
-from ingestion.schemas import LOG_EVENT_DDL, METRIC_EVENT_DDL, LogEvent, MetricEvent
+from ingestion.schemas import (
+    LOG_EVENT_DDL,
+    METRIC_EVENT_DDL,
+    AlertEvent,
+    LogEvent,
+    MetricEvent,
+)
 
 VALID = {
     "id": "6f1c0d2e-0000-4000-8000-000000000001",
@@ -110,3 +116,38 @@ def test_metric_spark_ddl_uses_bigint_for_byte_counters():
         "blk_read_bytes BIGINT, blk_write_bytes BIGINT, net_rx_bytes BIGINT, net_tx_bytes BIGINT, "
         "cpu_pct DOUBLE, healthy BOOLEAN, disk_used_pct DOUBLE, schema_version INT"
     )
+
+
+ALERT = {
+    "alert_id": "a1",
+    "source": "hdfs-replay",
+    "session_key": "blk_1",
+    "kind": "deeplog",
+    "risk_score": 0.4,
+    "threshold": 0.2,
+    "event_time": "2026-11-23T10:00:00.000Z",
+    "alert_time": "2026-11-23T10:00:02.500Z",
+    "model_version": "hdfs-v1",
+    "event_id": "E7",
+    "schema_version": 1,
+}
+
+
+def test_alert_roundtrip():
+    event = AlertEvent(**ALERT)
+    assert AlertEvent.from_json(event.to_json()) == event
+    assert AlertEvent(**{**ALERT, "kind": "novelty", "event_id": None, "risk_score": 1})
+
+
+@pytest.mark.parametrize(
+    "change, error",
+    [
+        ({"kind": "baska"}, "kind"),
+        ({"risk_score": 1.5}, "risk_score"),
+        ({"alert_time": "dün"}, "alert_time"),
+        ({"session_key": ""}, "session_key: boş"),
+    ],
+)
+def test_invalid_alert_rejected(change, error):
+    with pytest.raises(ValueError, match=error):
+        AlertEvent(**{**ALERT, **change})

@@ -120,16 +120,23 @@ def session_max_rank(model, sequences, h=10, batch_size=8192) -> np.ndarray:
     per_seq = [_all_windows(s, h) for s in sequences]
     rows = np.concatenate(per_seq)
     starts = np.concatenate([[0], np.cumsum([len(w) for w in per_seq])[:-1]])
+    return np.maximum.reduceat(window_ranks(model, rows, batch_size), starts)
+
+
+def window_ranks(model, rows: np.ndarray, batch_size=8192) -> np.ndarray:
+    """rows: (n, h+1) önceki h olay + gerçek olay. Gerçek olayın tahmin sırası (0 = en olası);
+    bilinmeyen (PAD) olay vocab_size alır. Offline ve canlı skorlama (ml.stream_score) ortak."""
+    rows = np.array(rows, dtype=np.int64)  # kopya: sliding_window_view salt okunurdur
     rank = np.empty(len(rows), dtype=np.int64)
     model.eval()
     with torch.no_grad():
         for start in range(0, len(rows), batch_size):
             chunk = torch.as_tensor(rows[start : start + batch_size])
-            logits, target = model(chunk[:, :h]), chunk[:, h]
+            logits, target = model(chunk[:, :-1]), chunk[:, -1]
             r = (logits > logits.gather(1, target[:, None])).sum(dim=1)
             r[target == PAD] = model.vocab_size
             rank[start : start + len(chunk)] = r.numpy()
-    return np.maximum.reduceat(rank, starts)
+    return rank
 
 
 def detect(model, sequences, h=10, g=9, batch_size=8192) -> np.ndarray:
