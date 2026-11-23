@@ -12,7 +12,7 @@ Her ADR tek bir kararı ve o kararın gerekçesini kayda geçirir. Kabul edilmi�
 | [0006](0006-veri-ve-degerlendirme.md) | İki izli veri ve değerlendirme stratejisi | Kabul |
 | [0007](0007-spark-4-ve-python-310.md) | Spark 4.2.1 ve Python 3.10 | Kabul |
 | [0008](0008-sablon-kaynagi.md) | HDFS_v1'de resmi Loghub şablonları, demo sistemde Drain | Kabul |
-| [0009](0009-hibrit-tespit.md) | Oturum kararı sayım yeniliğiyle, erken uyarı DeepLog ile | Önerildi |
+| [0009](0009-hibrit-tespit.md) | Oturum kararı sayım yeniliğiyle, erken uyarı DeepLog ile | Kabul |
 
 ## Şablon
 

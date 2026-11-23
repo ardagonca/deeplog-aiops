@@ -1,6 +1,6 @@
 # ADR-0009: Oturum kararı sayım yeniliğiyle, erken uyarı DeepLog ile (hibrit tespit)
 
-- Durum: Önerildi
+- Durum: Kabul (2026-11-23)
 - Tarih: 2026-11-18
 - İlgili: [ADR-0003](0003-deeplog-ana-model.md), [ADR-0006](0006-veri-ve-degerlendirme.md), [ADR-0008](0008-sablon-kaynagi.md), [EXP-02](../../experiments/EXP-02/)
 
@@ -49,6 +49,7 @@ Bulgular:
   - **DeepLog ezberlemiyor.** Yanlış alarm oranı eğitimde %0,56, testte %0,55; model küçük, veri büyük.
   - **Doğrulama sonuçları iyimser.** Paketlenen model, 5 tohum içinde doğrulamada en iyi olandır (seçim yanlılığı). Doğrulamada recall 0,918, testte 0,796. Bu yüzden raporlanan değerler test sonuçlarıdır. Paketin testteki F1'i 0,778 ve EXP-02 aralığıyla tutarlı.
   - **Sayım yeniliği zamanla bozuluyor.** Yanlış alarm oranı doğrulamada %0,004, testte %0,046. Zaman ilerledikçe daha önce görülmemiş normal desenler ortaya çıkıyor. **Batch katmanında düzenli yeniden eğitim gerekir** (M3/M4'te sıklığı belirlenecek).
+- **Sayım yeniliğinin recall'u neden 1?** HDFS_v1'de 589 farklı sayım vektörü var; anormal oturumların %98,1'i hiçbir normal oturumda görülmeyen bir desene sahip. Yani etiket pratikte sayım deseninin bir fonksiyonu. Bu yüzden yüksek skor, yöntemin üstünlüğünden çok veri setinin bir özelliğini yansıtır (Landauer vd., ESEC/FSE 2024, arXiv:2309.02854). Yöntemin gerçek sınavı İz B'dir (demo sistem); ikinci bir benchmark olarak BGL değerlendirilecek.
 - **Değerlendirme süreci şeffaflığı:** EXP-02 iki kez koşturuldu ve iki koşu da saklandı. İkinci koşudaki iki düzeltmeye (örneklemeli eğitim, çok tohumlu IF seçimi) ilk koşunun test sonuçlarındaki tohum oynaklığı görüldükten sonra karar verildi. Düzeltmeler yalnızca doğrulama setinde sınandı. Testteki etkileri küçüktür (DeepLog+EOS F1 +0,009, IF F1 +0,025).
 - **Sapma kaydı (GOV-05):** Kabul edilen önerideki "Isolation Forest ile anomali tespiti" yerine, karar verici olarak sayım yeniliği ve DeepLog kullanılıyor; Isolation Forest karşılaştırmada kalıyor.
 

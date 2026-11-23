@@ -16,3 +16,8 @@ DeepLog + EOS (g = 5, paket commit'i f3e89a6); sayım yeniliği 207 bilinen dese
 |---|---|---|---|
 | DeepLog + EOS | 0.7603 | 0.7956 | 0.7775 |
 | Sayım yeniliği | 0.9795 | 1.0000 | 0.9896 |
+
+## Etiket ile olay sayım vektörü ilişkisi (tüm veri)
+
+- 575,061 oturumda 589 farklı sayım vektörü var: 203 yalnızca normal, 377 yalnızca anormal, 9 karışık.
+- Anormal oturumların %98.11'i hiçbir normal oturumda görülmeyen bir sayım desenine sahip. Etiket pratikte sayım deseninin bir fonksiyonudur. Bu yüzden sayım yeniliğinin recall'u yapısal olarak 1'e yakındır; sonuç yöntemin üstünlüğünden çok veri setinin özelliğini yansıtır (bkz. Landauer vd., ESEC/FSE 2024, arXiv:2309.02854).

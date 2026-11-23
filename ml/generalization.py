@@ -8,8 +8,10 @@ burada bir kez raporlanır; paket test setiyle seçilmemiştir (ml.train_final).
 
 import argparse
 import sys
+from collections import defaultdict
 from pathlib import Path
 
+import numpy as np
 import torch
 
 from ml import dataset
@@ -19,6 +21,32 @@ from ml.metrics import prf
 from ml.package import load
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def label_vs_counts(ds) -> list[str]:
+    """Etiket, sayım vektörünün ne kadar fonksiyonu? Sayım yeniliğinin recall'u bunu yansıtır."""
+    vectors = count_matrix(ds, np.arange(len(ds.blocks))).astype(np.int32)
+    groups: dict[bytes, list[int]] = defaultdict(lambda: [0, 0])  # vektör -> [normal, anormal]
+    for row, label in zip(vectors, ds.labels, strict=True):
+        groups[row.tobytes()][int(label)] += 1
+    mixed = [v for v in groups.values() if v[0] and v[1]]
+    only_anomalous = sum(1 for v in groups.values() if v[1] and not v[0])
+    only_normal = len(groups) - only_anomalous - len(mixed)
+    anomalies = int(ds.labels.sum())
+    in_mixed = sum(v[1] for v in mixed)
+    return [
+        "",
+        "## Etiket ile olay sayım vektörü ilişkisi (tüm veri)",
+        "",
+        f"- {len(ds.blocks):,} oturumda {len(groups):,} farklı sayım vektörü var: "
+        f"{only_normal:,} yalnızca normal, {only_anomalous:,} yalnızca anormal, "
+        f"{len(mixed)} karışık.",
+        f"- Anormal oturumların %{100 * (anomalies - in_mixed) / anomalies:.2f}'i hiçbir normal "
+        "oturumda görülmeyen bir sayım desenine sahip. Etiket pratikte sayım deseninin bir "
+        "fonksiyonudur. Bu yüzden sayım yeniliğinin recall'u yapısal olarak 1'e yakındır; "
+        "sonuç yöntemin üstünlüğünden çok veri setinin özelliğini yansıtır (bkz. Landauer vd., "
+        "ESEC/FSE 2024, arXiv:2309.02854).",
+    ]
 
 
 def main() -> int:
@@ -64,6 +92,7 @@ def main() -> int:
     lines.append("|---|---|---|---|")
     for model, r in test.items():
         lines.append(f"| {model} | {r['precision']:.4f} | {r['recall']:.4f} | {r['f1']:.4f} |")
+    lines += label_vs_counts(ds)
     out = ROOT / "experiments" / "EXP-02" / f"genelleme-{c.name}.md"
     text = "\n".join(lines) + "\n"
     out.write_text(text, encoding="utf-8", newline="\n")
