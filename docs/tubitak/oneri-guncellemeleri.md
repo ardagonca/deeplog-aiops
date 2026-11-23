@@ -15,7 +15,7 @@ Formdaki başarı ölçütlerinin hepsi korunmaktadır. Yöntemdeki değişiklik
 |---|---|---|
 | Özet, 1.2, 2 | Ana model Isolation Forest + K-Means, "Spark MLlib ile Isolation Forest" (MLlib'de Isolation Forest yok) | Ana model DeepLog (LSTM) + Drain; Isolation Forest karşılaştırma (baseline) yöntemi ([ADR-0003](../adr/0003-deeplog-ana-model.md)) |
 | Özet, 1.2, Şekil 1 | Apache Flume ve ZooKeeper | Çıkarıldı; Kafka KRaft modunda tek başına alımı üstleniyor ([ADR-0002](../adr/0002-veri-alimi.md)) |
-| 2, Şekil 1 | "Spark Streaming" (eski DStream API'si) | Spark Structured Streaming 4.2 ([ADR-0004](../adr/0004-structured-streaming.md), [ADR-0007](../adr/0007-spark-4-ve-python-310.md)) |
+| 2, Şekil 1 | "Spark Streaming" (eski DStream API'si) | Spark Structured Streaming 4.2 ([ADR-0004](../adr/0004-structured-streaming.md), [ADR-0007](../adr/0007-spark-4-ve-python-310.md)); skorlama micro-batch başına toplu ([ADR-0010](../adr/0010-tespit-foreachbatch.md)) |
 | 1.2, 3.1, 3.2 | Çelişen hedefler: 500 / 1.000 / 10.000 log/sn; %85 / %90 "doğruluk"; 30 sn / 1 dk | Formdaki takvim ölçütleri (1.000 log/sn, Precision > %85, < 1 dk) bağlayıcı olarak korundu. Bunların üstüne daha sıkı iç hedefler (K1–K10) eklendi; "doğruluk" yerine Precision/Recall raporlanır |
 | 3.1, satır 3 (26.09 – 29.11.2026) | Model aşaması | Sistem Kasım 2026'da ölçülebilir hedefler ve otomatik testlerle yeniden kuruldu; model aşamasının Aralık 2026 başında tamamlanması planlanıyor. Sonraki satırların resmi tarihleri değişmiyor |
 | 3.1, satır 3 (Isolation Forest) | Taahhüt edilen yöntem | Isolation Forest **çıkarılmadı**. Karşılaştırma yöntemi olarak eğitilir; hiperparametresi (max_samples) doğrulama setinde ızgarayla seçilir ve formdaki ölçüte (Precision > %85) göre ayrıca raporlanır. HDFS_v1'de zayıf ve tohuma duyarlı çıktığı için sistemde karar verici olarak kullanılmıyor (EXP-02, [ADR-0009](../adr/0009-hibrit-tespit.md)) |
@@ -140,6 +140,7 @@ Resmi takvimin 1. ve 2. satırlarına karşılık gelen altyapı ve veri hattı 
   - Isolation Forest (öneride taahhüt edilen yöntem): Precision 0,824, F1 0,427.
 
   DeepLog, Isolation Forest'tan anlamlı ölçüde iyidir (McNemar p ≈ 10⁻¹⁴⁹). Yöntem seçiminin gerekçesi [ADR-0009](../adr/0009-hibrit-tespit.md)'dadır.
+- **Gerçek zamanlı tespit (EXP-03):** Model, Spark Structured Streaming ile çalışan tespit işine yüklendi. Test setinden rastgele seçilen 20.000 oturum (432 anormal, 331.979 log satırı) saniyede 5.000 log hızında oynatıldı. Erken uyarıların log → alarm gecikmesi p50 3,9 sn, **p95 6,9 sn** (en kötü 8,9 sn) ölçüldü; K5 hedefi (p95 ≤ 10 sn) sağlandı. Canlı sistemin kararları, aynı oturumlar için çevrimdışı değerlendirmenin kararlarıyla **%100 aynıdır**; canlı sayım yeniliği bu oturumlarda Precision 0,969, Recall 1,000 verdi. Oturum kararı, oturumun 120 sn olay almayınca kapanmasıyla verilir; bu süre gecikme ölçümüne dahil değildir.
 
 ---
 
@@ -156,7 +157,7 @@ Resmi takvim değişmemiştir; satırların durumu ve gerçekleşme tarihleri [Y
 | Otonom aksiyonun yanlış alarmla zarar vermesi (gereksiz yeniden başlatma ya da veri silme) | Önlem olarak izin listesi, bekleme süresi, saatlik üst sınır, yalnızca izinli dizinleri temizleyen playbook ve acil durdurma anahtarı kullanılır. Gereksiz aksiyon görülürse aksiyonlar insan onaylı "öneri moduna" alınır ve sonuç (K8) olduğu gibi raporlanır. |
 | Bilgisayar kaynaklarının (RAM, CPU) yetmemesi | Önlem olarak servis başına bellek sınırı ve yalnızca gereken servislerin açılması uygulanır. Yetmezse Spark tek konteynerde yerel modda çalıştırılır; bu da yetmezse sistem öğrenci kredisiyle bir bulut sanal makinesine taşınır. Mimari değişmez. |
 | DeepLog'un K3 hedefine ulaşamaması | Önlem olarak makaleye sadık uygulama ve şablonlama doğruluğunun ayrıca ölçülmesi esas alınır. Hedefe ulaşılamazsa LogAnomaly veya Autoencoder tabanlı yöntemler denenir; yöntem değişikliği danışman onayıyla raporlanır. |
-| Gerçek zamanlı skorlamada gecikmenin K5'i aşması | Önlem olarak micro-batch süresi ve bölüm sayısı ayarlanır. Gecikme sürerse skorlama Spark dışındaki bağımsız bir servise taşınır. Bu bir yöntem değişikliğidir: hız katmanının teknolojisi değişir, mimari aynı kalır. |
+| Gerçek zamanlı skorlamada gecikmenin K5'i aşması | Önlem olarak micro-batch süresi ve bölüm sayısı ayarlanır. Gecikme sürerse skorlama Spark dışındaki bağımsız bir servise taşınır. Bu bir yöntem değişikliğidir: hız katmanının teknolojisi değişir, mimari aynı kalır. **Gerçekleşen:** oturum başına skorlama (~1.100 log/sn) yetmedi; skorlama Spark içinde micro-batch başına toplu yapılacak şekilde değiştirildi (~9.500 log/sn, [ADR-0010](../adr/0010-tespit-foreachbatch.md)). Spark dışına çıkmaya gerek kalmadı ve K5 sağlandı. |
 | Demo sistemdeki arızaların gerçek arızaları temsil etmemesi | Ani ve kademeli olmak üzere 4 senaryo kullanılır. Bu durum bir sınırlılık olarak raporlanır; ana bilimsel kanıt gerçek etiketli HDFS_v1 sonuçlarıdır. |
 
 ---

@@ -63,6 +63,22 @@ Depo kökü konteynerin `/opt/deeplog` dizinine salt okunur olarak bağlanır ve
    - Jar sürümlerini şu POM dosyasındaki `kafka.version` ve `commons-pool2.version` alanlarından al: `https://repo1.maven.org/maven2/org/apache/spark/spark-parent_2.13/<sürüm>/spark-parent_2.13-<sürüm>.pom`
 3. Son olarak imajı build et ve duman testini çalıştır: `docker compose build spark-master && docker compose up -d --wait && bash smoke_test.sh`
 
+## Tespit job'u (`spark-detect`)
+
+`spark-detect`, `logs.raw`'ı okuyup `alerts` topic'ine alarm yazar ([ADR-0009](../adr/0009-hibrit-tespit.md), [ADR-0010](../adr/0010-tespit-foreachbatch.md)). Arayüzü http://127.0.0.1:4041 adresindedir.
+
+| Ortam değişkeni | Varsayılan | Anlamı |
+|---|---|---|
+| `DETECT_MODEL` | `hdfs-v1` | HDFS'teki `/models/deeplog/<ad>` paketi |
+| `DETECT_TRIGGER` | `2 seconds` | Micro-batch aralığı |
+| `DETECT_SESSION_TIMEOUT_SEC` | `120` | Bu süre olay almayan oturum kapanır ve son kararı (EOS, sayım yeniliği) verilir |
+
+- **Alarmları izlemek:** `docker compose exec kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic alerts`
+- **Model sürümünü değiştirmek:** Yeni paket `jobs/publish_model.py` ile HDFS'e yazılır (sürümler değişmez, üzerine yazılmaz). Ardından `infra/` dizininde `DETECT_MODEL=<yeni> docker compose up -d spark-detect` çalıştırılır (değişken `.env` dosyasına da yazılabilir). Çalışırken model değiştirme yoktur.
+- **Kod değişikliği:** Depo kökü bu servise bağlı olduğu için `docker compose restart spark-detect` yeterlidir. Job `latest` offset'ten başlar ve checkpoint'ten devam eder; açık oturumların durumu bellekte olduğundan yeniden başlatmada kaybolur (RT-08).
+- **Checkpoint'i sıfırlamak:** `docker compose stop spark-detect`, ardından `docker compose exec namenode hdfs dfs -rm -r -f /checkpoints/detect` ve `docker compose up -d spark-detect`.
+- **Gecikme ve tutarlılık ölçümü:** `uv run --group ml python -m ml.exp03` (EXP-03). Önce yığın açık ve model paketi `data/models/<ad>` altında yerelde de bulunmalıdır.
+
 ## Çökme davranışı
 
 Uzun çalışan servisler `restart: on-failure` ayarıyla çalışır:

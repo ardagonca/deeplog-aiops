@@ -58,7 +58,7 @@ flowchart LR
 | Ingest job (`spark-ingest`) | Structured Streaming | `logs.raw` topic'ini HDFS raw bölgesine Parquet olarak yazar, sözleşmeye uymayanları karantinaya ayırır. `metrics.raw` ve `actions` topic'leri ING-05 ve REM ile eklenecek | ING |
 | Şablonlama job | Spark batch (`mapInPandas`): HDFS_v1 için resmi Loghub şablon eşleştiricisi, demo sistem için Drain3 ([ADR-0008](adr/0008-sablon-kaynagi.md)) | Ham logları şablon kimliğine (`template_id`) çevirir; şablon sözlüğünü üretir | ML |
 | DeepLog eğitimi | PyTorch (tek düğüm) | Model eğitimi ve değerlendirmesi | ML |
-| Tespit job | Structured Streaming, `applyInPandasWithState` | Oturum bazlı risk skoru üretir, eşik aşılınca alarm yazar | RT |
+| Tespit job (`spark-detect`) | Structured Streaming, `foreachBatch` ile sürücüde toplu skorlama ([ADR-0010](adr/0010-tespit-foreachbatch.md)) | Oturum bazlı erken uyarı (DeepLog) ve oturum kararı (sayım yeniliği) üretir, `alerts` topic'ine yazar | RT |
 | Remediator | Python, Ansible, Docker SDK (ayrı konteyner) | Alarmdan arıza tipini çıkarır, korumaları uygular ve aksiyonu çalıştırır | REM |
 | Demo hedef sistem | Küçük bir FastAPI uygulaması ve arıza enjektörü | Otonom döngünün denendiği canlı sistem | REM |
 | Panel | FastAPI (WebSocket) + React | Canlı akış, alarmlar, aksiyonlar ve KPI'lar | UI |
@@ -103,7 +103,7 @@ Bu akıştaki zaman damgalarından iki KPI hesaplanır: K5 = t1 − t0 ve K6 = t
 |---|---|---|---|---|---|
 | `logs.raw` | Replayer, demo sistem | Ingest, Tespit | `session_key` (yoksa `source`) | 3 | 24 sa |
 | `metrics.raw` | Metrik ajanı | Ingest, Remediator | `source` | 1 | 24 sa |
-| `alerts` | Tespit job | Remediator, Panel API | `source` | 1 | 7 gün |
+| `alerts` | Tespit job | Remediator, Panel API | `session_key` | 1 | 7 gün |
 | `actions` | Remediator | Ingest, Panel API | `source` | 1 | 7 gün |
 
 `logs.raw` topic'inin anahtarı `session_key`'dir. Bunun iki nedeni var: Bir oturumun olayları aynı bölüme düşer ve sırası korunur, ki DeepLog dizi modeli bu sıraya dayanır. Ayrıca HDFS_v1'deki 575 bin oturum üç bölüme dengeli dağılır. `source` anahtar olsaydı tüm HDFS logları tek bölüme giderdi (ING-03'te ölçülen dağılım: 99.567 / 98.533 / 101.900).
@@ -139,10 +139,18 @@ Bayt alanları sayaçtır, yani konteyner başladığından beri biriken toplam�
 **`alerts`**
 
 ```json
-{"schema_version": 1, "alert_id": "uuid", "source": "demo-app", "session_key": "...",
- "risk_score": 0.91, "threshold": 0.85, "trigger_event_time": "...", "alert_time": "...",
- "model_version": "deeplog-demo-v1", "evidence": {"unexpected_templates": ["T42"], "unknown_count": 2}}
+{"schema_version": 1, "alert_id": "uuid5", "source": "hdfs-replay", "session_key": "blk_-1608999687919862906",
+ "kind": "deeplog", "risk_score": 0.2, "threshold": 0.1667, "event_id": "E11",
+ "event_time": "2026-11-23T10:15:30.123Z", "alert_time": "2026-11-23T10:15:32.410Z",
+ "model_version": "hdfs-v1"}
 ```
+
+İki alarm türü vardır ([ADR-0009](adr/0009-hibrit-tespit.md)):
+
+- `deeplog`: erken uyarı. Oturum sürerken gerçek olay ilk `g` tahminde değilse oturum başına bir kez verilir; `event_id` sapan olayın şablonudur (`UNKNOWN` = bilinmeyen şablon). Oturum kapanırken oturum sonu beklenmiyorsa `event_id = "EOS"` ile verilir.
+- `novelty`: oturum kararı. Oturum `DETECT_SESSION_TIMEOUT_SEC` boyunca olay almayınca kapanır; olay sayım vektörü normal desenlerde görülmemişse verilir (`event_id` boş, `risk_score = threshold = 1`).
+
+`risk_score` = gerçek olayın sırası / sözlük boyu, `threshold` = `g` / sözlük boyu. `event_time` alarmı tetikleyen olayın zamanıdır; K5 gecikmesi `alert_time - event_time` ile ölçülür. `alert_id`, (model, tür, oturum) üçlüsünden UUIDv5 ile türetilir; Kafka yazımı en az bir kez olduğundan tüketiciler tekrarları bu kimlikle ayıklar. Mesaj anahtarı `session_key`'dir.
 
 **`actions`**
 
@@ -180,20 +188,21 @@ Geliştirme makinesinde 32 GB RAM var. WSL2 12 GB bellek ve 6 çekirdekle sını
 | Servis | Host portu | RAM limiti |
 |---|---|---|
 | kafka | 9092 | 1 GB |
-| namenode | 9870 (UI) | 1 GB |
-| datanode | 9864 (UI) | 1 GB |
+| namenode | 9870 (UI) | 512 MB |
+| datanode | 9864 (UI) | 512 MB |
 | spark-master | 8080 (UI), 7077 | 512 MB |
-| spark-worker | 8081 (UI) | 3 GB |
+| spark-worker | 8081 (UI) | 3,5 GB |
 | spark-ingest (sürekli sürücü) | 4040 (UI) | 1 GB |
+| spark-detect (sürekli sürücü, PyTorch skorlama) | 4041 (UI) | 1,5 GB |
 | spark-job (geçici sürücü) | – | 1 GB |
 | remediator | – | 256 MB |
 | demo-app | 8000 | 256 MB |
 | panel-api | 8001 | 256 MB |
 | socket-proxy | – | 64 MB |
 | metrics-agent | – | 128 MB |
-| **Toplam** | | **~9,5 GB** |
+| **Toplam** | | **~9,4 GB** |
 
-Worker 2 çekirdek ve 2 GB executor belleği sunar. Her Spark uygulaması 1 çekirdek ve 1 GB ile sınırlıdır (`spark.cores.max`); bu sayede sürekli çalışan `spark-ingest`'in yanında aynı anda bir `spark-job` daha çalışabilir. Docker Compose profilleriyle yalnızca o anki iş için gereken servisler açılır. Örneğin model eğitimi sırasında panel ve demo sistem kapalı tutulur.
+Worker 3 çekirdek ve 3 GB executor belleği sunar. Her Spark uygulaması 1 çekirdek ve 1 GB ile sınırlıdır (`spark.cores.max`); bu sayede sürekli çalışan `spark-ingest` ve `spark-detect`'in yanında aynı anda bir `spark-job` daha çalışabilir. `spark-detect` skorlamayı executor'da değil sürücüde yaptığı için sürücü belleği daha büyüktür. Docker Compose profilleriyle yalnızca o anki iş için gereken servisler açılır. Örneğin model eğitimi sırasında panel ve demo sistem kapalı tutulur.
 
 ## 8. Ortamlar
 
