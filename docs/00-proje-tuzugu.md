@@ -98,7 +98,7 @@ R: yapan, A: onaylayan, C: danışılan, I: bilgilendirilen
 - Resmi bitiş tarihi 12.05.2027'dir ve kaydırılamaz.
 - Tek geliştirici çalışıyor. Kapasite dönem içinde haftada yaklaşık 12 saat, sınav dönemlerinde bunun yarısı, tatillerde yaklaşık 20 saat.
 - Tek dizüstü bilgisayar kullanılıyor (Windows 11, Docker Desktop, WSL2). RAM bütçesi için bkz. [Mimari §7](01-mimari.md#7-servisler-portlar-ve-kaynak-bütçesi).
-- Ücretli yazılım veya bulut kullanılmayacak. Bulut yalnızca öğrenci kredisiyle ve B planı olarak devreye girer.
+- Ücretli yazılım kullanılmayacak. Bulut (AWS) yalnızca yerel makineyi aşan deneyler (büyük ölçekli veri seti, çok düğümlü küme) için ve en fazla 9.000 TL'lik proje bütçesiyle kullanılır; plan ve harcama denetimi: [Bulut Bütçe Planı](07-bulut-butcesi.md).
 
 **Varsayımlar**
 

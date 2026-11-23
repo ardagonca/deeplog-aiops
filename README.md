@@ -15,6 +15,7 @@ Dağıtık sistemlerden akan log ve metrikleri gerçek zamanlı analiz eden, ar�
 | [Test ve Deney Stratejisi](docs/04-test-stratejisi.md) | Test seviyeleri, metrik tanımları, deney protokolleri |
 | [Risk Kaydı](docs/05-risk-kaydi.md) | Riskler, olasılık/etki, erken uyarılar, B planları |
 | [Çalışma Kuralları](docs/06-calisma-kurallari.md) | Git akışı, kod standartları, DoR/DoD, ritüeller |
+| [Bulut Bütçe Planı](docs/07-bulut-butcesi.md) | AWS deneyleri için maliyet tahmini (9.000 TL sınırı), zamanlama ve harcama denetimi |
 | [Mimari Karar Kayıtları](docs/adr/README.md) | Teknoloji ve yöntem seçimlerinin gerekçeleri |
 | [TÜBİTAK Sapma Kaydı ve Rapor Malzemesi](docs/tubitak/oneri-guncellemeleri.md) | Kabul edilen öneriden sapmalar, gerekçeleri ve sonuç raporu taslak metinleri (GOV-05) |
 | [Altyapı Runbook'u](docs/runbooks/altyapi.md) | Başlatma, test, deney, sıfırlama ve sorun giderme komutları |
