@@ -6,7 +6,7 @@ import torch
 from ml.deeplog import DeepLog, session_max_rank, with_eos
 from ml.novelty import CountNovelty
 from ml.package import ModelConfig, ModelPackage
-from ml.stream_score import Session, advance, close
+from ml.stream_score import Session, advance, advance_many, close, close_many
 
 VOCAB = ["PAD", "E1", "E2", "E3", "E4"]
 
@@ -43,3 +43,20 @@ def test_novelty_on_known_pattern_and_unknown_event_rank():
     assert close(pkg, s)[1] is False  # [0,1,1,1,0] biliniyor
     s = advance(pkg, s, [0])  # bilinmeyen olay
     assert s.ranks == [pkg.config.vocab_size] and close(pkg, s)[1] is True
+
+
+def test_batched_equals_one_by_one():
+    pkg = _pkg()
+    rng = np.random.default_rng(2)
+    chunks = [
+        [rng.integers(0, len(VOCAB), size=rng.integers(1, 6)).tolist() for _ in range(4)]
+        for _ in range(12)
+    ]  # 12 oturum x 4 micro-batch
+    single = [Session.new(pkg) for _ in chunks]
+    batched = [Session.new(pkg) for _ in chunks]
+    for step in range(4):
+        expected = [advance(pkg, s, c[step]).ranks for s, c in zip(single, chunks, strict=True)]
+        advance_many(pkg, [(s, c[step]) for s, c in zip(batched, chunks, strict=True)])
+        assert [s.ranks for s in batched] == expected
+    assert close_many(pkg, batched) == [close(pkg, s) for s in single]
+    assert [s.counts for s in batched] == [s.counts for s in single]

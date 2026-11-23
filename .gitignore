@@ -28,3 +28,5 @@ experiments/**/logs/
 .idea/
 Thumbs.db
 .DS_Store
+# EXP-03 oturum listesi tohumdan (0) yeniden üretilir
+experiments/EXP-03/*/blocks.txt

@@ -39,6 +39,31 @@ def advance(pkg: ModelPackage, s: Session, codes: list[int]) -> Session:
     return s
 
 
+def advance_many(pkg: ModelPackage, batch: list[tuple[Session, list[int]]]) -> None:
+    """advance() ile aynı sonuç, ama tüm oturumların pencereleri tek ileri geçişte skorlanır.
+    Canlı akışta bir micro-batch binlerce oturum içerir; oturum başına çağrı darboğazdı (RT-06)."""
+    h = pkg.config.h
+    streams = [s.history + list(codes) for s, codes in batch]
+    rows = [np.lib.stride_tricks.sliding_window_view(np.array(st), h + 1) for st in streams]
+    ranks = window_ranks(pkg.deeplog, np.concatenate(rows)) if rows else np.zeros(0, np.int64)
+    start = 0
+    for (s, codes), st in zip(batch, streams, strict=True):
+        s.ranks = ranks[start : start + len(codes)].tolist()
+        start += len(codes)
+        for c in codes:
+            s.counts[c] += 1
+        s.history = st[-h:]
+
+
+def close_many(pkg: ModelPackage, sessions: list[Session]) -> list[tuple[int, bool]]:
+    """close() ile aynı sonuç, toplu."""
+    if not sessions:
+        return []
+    eos = window_ranks(pkg.deeplog, [s.history + [pkg.config.eos] for s in sessions])
+    novel = pkg.novelty.predict(np.array([s.counts for s in sessions]))
+    return [(int(r), bool(n)) for r, n in zip(eos, novel, strict=True)]
+
+
 def close(pkg: ModelPackage, s: Session) -> tuple[int, bool]:
     """Oturum kapanırken: (oturum sonu olayının tahmin sırası, sayım vektörü görülmemiş mi)."""
     eos_rank = int(window_ranks(pkg.deeplog, [s.history + [pkg.config.eos]])[0])
